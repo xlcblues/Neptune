@@ -1,0 +1,23 @@
+:root {
+  --bg0: #050b17;
+  --bg1: #0a1226;
+  --bg2: #101b33;
+  --bg3: #16233f;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text1: #f2f6ff;
+  --text2: #9aa7c4;
+  --text3: #6c7a9c;
+  --accent: #4d8dff;
+  --accent-2: #2b5be8;
+  --accent3: #2fe0c8;
+  --warm: #ff7d6b;
+  --pink: #ff6b9a;
+  --success: #3ed598;
+  --radius-card: 8px;
+  --radius-pill: 999px;
+  --font-ui: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', Inter,
+    -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}

@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neptune · UI 风格预览</title>
+<!-- preview-wip -->
+<style>
+:root {
+  --bg0: #050B17;
+  --bg1: #0A1226;
+  --bg2: #101B33;
+  --bg3: #16233F;
+  --glass: rgba(255,255,255,.06);
+  --glass-strong: rgba(255,255,255,.10);
+  --border: rgba(255,255,255,.08);
+  --border-strong: rgba(255,255,255,.14);
+  --text1: #F2F6FF;
+  --text2: #9AA7C4;
+  --text3: #6C7A9C;
+  --accent: #4D8DFF;
+  --accent2: #2FE0C8;
+  --warm: #FF7D6B;
+  --pink: #FF6B9A;
+  --success: #3ED598;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', Inter, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #04070F;
+  color: var(--text1);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  letter-spacing: 0;
+}
+button { font-family: inherit; }
+
+.ic {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+  flex: none;
+}
+.ic-fill { fill: currentColor; stroke: none; }
+
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 44px 1fr 96px;
+  background: var(--bg1);
+}
+
+/* Titlebar */
+.titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: rgba(5,9,18,.82);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+.traffic { display: flex; gap: 8px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot.red { background: #FF5F57; }
+.dot.yellow { background: #FEBC2E; }
+.dot.green { background: #28C840; }
+.titlebar-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+}
+.titlebar-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text3);
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(62,213,152,.8);
+}
+
+/* Layout */
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 18px 14px 16px;
+  background: rgba(8,14,30,.74);
+  border-right: 1px solid var(--border);
+  min-height: 0;
+  overflow-y: auto;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 16px;
+}
+.brand svg { width: 30px; height: 30px; flex: none; }
+.brand-name { font-size: 17px; font-weight: 600; }
+.nav-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  padding: 14px 8px 6px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.nav-item:hover { background: var(--glass); color: var(--text1); }
+.nav-item.active {
+  background: var(--bg3);
+  color: var(--text1);
+}
+.nav-item.active .ic { color: var(--accent); }
+
+.playlist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 8px 6px;
+}
+.playlist-head .nav-label { padding: 0; }
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+.icon-btn:hover { background: var(--glass-strong); color: var(--text1); }
+.icon-btn:active { transform: scale(.97); }
+.icon-btn.on { color: var(--accent); }
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.playlist-item:hover { background: var(--glass); color: var(--text1); }
+.playlist-item.active { background: var(--bg3); color: var(--text1); }
+.pl-cover {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.9);
+}
+.pl-cover .ic { width: 14px; height: 14px; }
+.pl-meta { min-width: 0; }
+.pl-meta b { display: block; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-meta span { font-size: 11px; color: var(--text3); }
+
+.storage {
+  margin-top: auto;
+  margin-bottom: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--glass);
+}
+.storage-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.storage-head .ic { width: 15px; height: 15px; color: var(--accent); }
+.storage-sub { font-size: 11px; color: var(--text3); margin: 7px 0 9px; }
+.progress-mini { height: 4px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+.progress-mini i {
+  display: block;
+  height: 100%;
+  width: 64%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+.storage-note { margin-top: 9px; font-size: 10px; color: var(--text3); }
+
+/* Main */
+.main { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--bg1); }
+.topbar {
+  height: 64px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,18,38,.35);
+}
+.page-title { font-size: 22px; font-weight: 600; white-space: nowrap; }
+.search {
+  width: 300px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--glass);
+  border: 1px solid transparent;
+  color: var(--text3);
+  transition: border-color .15s ease, background .15s ease;
+}
+.search:focus-within {
+  border-color: rgba(77,141,255,.55);
+  background: rgba(255,255,255,.09);
+  color: var(--text2);
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text1);
+  font-family: inherit;
+  font-size: 13px;
+}
+.search input::placeholder { color: var(--text3); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-left: 6px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #4D8DFF, #2FE0C8);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: 24px; }
+.content::-webkit-scrollbar { width: 8px; }
+.content::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; }
+
+/* Hero */
+.hero {
+  position: relative;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg2);
+  border: 1px solid var(--border-strong);
+}
+#visualizer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(5,10,22,.94) 0%, rgba(5,10,22,.72) 38%, rgba(5,10,22,.08) 72%);
+  pointer-events: none;
+}
+.hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 480px;
+  padding: 34px 40px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 13px;
+  background: rgba(47,224,200,.14);
+  border: 1px solid rgba(47,224,200,.32);
+  color: #8FF0E2;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent2);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .45; transform: scale(.75); }
+}
+.hero h1 {
+  margin: 14px 0 8px;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+.hero p { color: var(--text2); font-size: 14px; line-height: 1.6; max-width: 420px; }
+.hero-stats { display: flex; gap: 24px; margin: 18px 0 20px; }
+.hero-stats b { display: block; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hero-stats span { font-size: 11px; color: var(--text3); }
+.hero-actions { display: flex; gap: 10px; }
+.btn-primary,
+.btn-ghost {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .1s ease, box-shadow .15s ease;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #4D8DFF, #2B5BE8);
+  border: 0;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(43,91,232,.35);
+}
+.btn-ghost {
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--border-strong);
+  color: #D8E2FF;
+}
+.btn-primary:hover { box-shadow: 0 6px 18px rgba(43,91,232,.48); }
+.btn-primary:active, .btn-ghost:active { transform: scale(.97); }
+.hero-brand {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: rgba(10,18,38,.55);
+  border: 1px solid var(--border-strong);
+  color: #C9DBFF;
+  font-size: 12px;
+  font-weight: 600;
+}
+.hero-brand svg { width: 20px; height: 20px; }
+.viz-label {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 2;
+  font-size: 11px;
+  color: rgba(242,246,255,.72);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.viz-label .live { color: var(--accent2); font-weight: 600; }
+
+/* Genre chips */
+.genre-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 4px; }
+.genre-chip {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 15px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  color: var(--text2);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.genre-chip:hover { color: var(--text1); background: var(--glass-strong); }
+.genre-chip.active {
+  background: var(--bg3);
+  color: var(--text1);
+  border-color: rgba(77,141,255,.5);
+}
+.genre-chip .gdot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+
+/* Sections */
+.section { margin-top: 26px; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-head h2 { font-size: 18px; font-weight: 600; }
+.link-btn {
+  border: 0;
+  background: none;
+  color: #8FB8FF;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.link-btn:hover { color: #C9DBFF; }
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 18px;
+}
+.album-card { cursor: pointer; min-width: 0; }
+.cover {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg2);
+}
+.cover svg { width: 100%; height: 100%; display: block; }
+.cover .tag {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(5,10,22,.55);
+  color: #EAF2FF;
+}
+.cover-play {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px) scale(.95);
+  transition: opacity .2s ease, transform .2s ease;
+  box-shadow: 0 6px 14px rgba(0,0,0,.35);
+}
+.album-card:hover .cover-play { opacity: 1; transform: none; }
+.album-card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 9px 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.album-card p {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-list {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255,255,255,.03);
+}
+.track-row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto 64px 40px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  height: 62px;
+  border-bottom: 1px solid var(--border);
+}
+.track-row:last-child { border-bottom: 0; }
+.track-row:hover { background: rgba(255,255,255,.06); }
+.t-cover { width: 44px; height: 44px; border-radius: 6px; overflow: hidden; flex: none; }
+.t-cover svg { width: 100%; height: 100%; display: block; }
+.t-meta { min-width: 0; }
+.t-meta h4 { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-meta p { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-tag {
+  font-size: 11px;
+  color: var(--text2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.t-tag .gdot { width: 6px; height: 6px; border-radius: 50%; }
+.t-dur { font-size: 12px; color: var(--text3); text-align: right; font-variant-numeric: tabular-nums; }
+.t-play { opacity: 0; transition: opacity .2s ease; }
+.track-row:hover .t-play { opacity: 1; }
+.playing-row .t-dur { color: var(--accent2); }
+
+/* Player bar */
+.player {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  background: rgba(9,15,31,.86);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border-top: 1px solid var(--border-strong);
+}
+.now { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.n-cover {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex: none;
+}
+.n-cover svg { width: 100%; height: 100%; display: block; }
+.n-meta { min-width: 0; }
+.n-meta h5 { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.n-meta p { font-size: 11px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now .heart { margin-left: auto; }
+
+.transport {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(560px, 42vw);
+}
+.controls { display: flex; align-items: center; gap: 6px; }
+.ctrl {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--text2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color .15s ease, transform .1s ease;
+}
+.ctrl:hover { color: var(--text1); }
+.ctrl:active { transform: scale(.92); }
+.play-main {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 0;
+  background: linear-gradient(135deg, var(--accent), #2B5BE8);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(43,91,232,.35);
+  transition: transform .1s ease, box-shadow .15s ease;
+}
+.play-main:hover { box-shadow: 0 6px 16px rgba(43,91,232,.5); }
+.play-main:active { transform: scale(.94); }
+.play-main .ic { width: 20px; height: 20px; }
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  font-size: 11px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
+.progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.12);
+  position: relative;
+  cursor: pointer;
+}
+.progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 38%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+}
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+
+.extras {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+.effect-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 17px;
+  background: rgba(77,141,255,.18);
+  border: 1px solid rgba(77,141,255,.38);
+  color: #C9DBFF;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.effect-pill .ic { width: 15px; height: 15px; }
+.vol { display: flex; align-items: center; gap: 8px; }
+.vol-track {
+  width: 88px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.12);
+  position: relative;
+}
+.vol-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 72%;
+  border-radius: 4px;
+  background: rgba(255,255,255,.65);
+}
+
+.eq { display: none; align-items: flex-end; gap: 2px; height: 14px; margin-left: 4px; }
+.app.playing .eq { display: flex; }
+.eq span {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent2);
+  animation: eq 1s ease-in-out infinite;
+}
+.eq span:nth-child(2) { animation-delay: .15s; }
+.eq span:nth-child(3) { animation-delay: .3s; }
+@keyframes eq {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+
+/* Design spec panel */
+.spec-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 112px;
+  width: 292px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  background: rgba(13,21,40,.93);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+  padding: 16px;
+  z-index: 50;
+  transform: translateY(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+.spec-panel.open { opacity: 1; transform: none; pointer-events: auto; }
+.spec-panel::-webkit-scrollbar { width: 6px; }
+.spec-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 3px; }
+.spec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.spec-head b { font-size: 13px; font-weight: 600; flex: 1; }
+.spec-head .ic { width: 16px; height: 16px; color: var(--accent); }
+.spec-label { font-size: 11px; font-weight: 600; color: var(--text3); margin: 14px 0 8px; }
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+}
+.token-row .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.token-row b { flex: 1; color: var(--text2); font-weight: 500; }
+.token-row code { color: var(--text1); font-size: 11px; font-family: 'Cascadia Code', Consolas, monospace; }
+.token-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.token-cell {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,.05);
+}
+.token-cell b { display: block; font-size: 13px; font-weight: 600; }
+.token-cell span { font-size: 11px; color: var(--text3); }
+.fx-list { list-style: none; display: grid; gap: 6px; }
+.fx-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.04);
+}
+.fx-list .n {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex: none;
+}
+.spec-foot {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+@media (max-width: 1080px) {
+  .hero { height: 340px; }
+  .effect-pill span.pill-text { display: none; }
+  .effect-pill { width: 34px; padding: 0; justify-content: center; }
+}
+
+.icon-btn.heart.on { color: var(--warm); }
+.track-row.playing-row { background: rgba(77,141,255,.09); }
+.playlist-item.active .pl-cover { box-shadow: 0 0 0 1px rgba(255,255,255,.18); }
+.search input[type="search"]::-webkit-search-cancel-button { display: none; }
+</style>
+</head>
+<body>
+
+<svg aria-hidden="true" style="display:none">
+  <symbol id="logo-sym" viewBox="0 0 1024 1024">
+    <path d="M512 252 L556 330 L468 330 Z" fill="currentColor"/>
+    <rect x="491" y="330" width="42" height="360" rx="21" fill="currentColor"/>
+    <rect x="428" y="470" width="42" height="220" rx="21" fill="currentColor"/>
+    <rect x="554" y="390" width="42" height="300" rx="21" fill="currentColor"/>
+    <path d="M386 724 Q512 660 638 724" fill="none" stroke="currentColor" stroke-width="22" stroke-linecap="round" opacity=".85"/>
+  </symbol>
+  <symbol id="i-home" viewBox="0 0 24 24">
+    <path d="M3.5 10.5 12 3.8l8.5 6.7V20a1 1 0 0 1-1 1h-5v-6.5h-5V21h-5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-library" viewBox="0 0 24 24">
+    <path d="M4 4.5h4.5v15H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+    <path d="M9.8 6.5h4.5v13H9.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+    <path d="M15.7 4.5H20v15h-4.3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24">
+    <path d="M12 3.8l1.8 4.6 4.6 1.8-4.6 1.8L12 16.8l-1.8-4.6-4.6-1.8 4.6-1.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+    <path d="M17.6 17.6l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24">
+    <path d="M3 12h2.5l2-5.5 3.2 10.5 2.3-7 1.5 3H21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24">
+    <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24">
+    <path d="M12 19.8C8.5 16.7 3.8 13 3.8 9.5c0-2.3 1.7-4 3.9-4 1.8 0 3.1 1 4.3 2.8 1.2-1.8 2.5-2.8 4.3-2.8 2.2 0 3.9 1.7 3.9 4 0 3.5-4.7 7.2-8.2 10.3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-search" viewBox="0 0 24 24">
+    <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <path d="m20 20-4.4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24">
+    <path d="M4 7h9M17 7h3M4 17h4M12 17h8M13 4.5v5M8 14.5v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-play" viewBox="0 0 24 24">
+    <path d="M8.2 5.2v13.6L19 12z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24">
+    <path d="M9.2 5.5v13M14.8 5.5v13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24">
+    <path d="M7 5.5v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M17.5 6.2v11.6L9 12z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-next" viewBox="0 0 24 24">
+    <path d="M17 5.5v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M6.5 6.2v11.6L15 12z" fill="currentColor" stroke="none"/>
+  </symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24">
+    <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24">
+    <path d="M4.5 8.5h13.2l-2.8-2.8M19.5 15.5H6.3l2.8 2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24">
+    <path d="M4.5 9.2v5.6h3.4l4.6 3.4V5.8L7.9 9.2z" fill="currentColor" stroke="none"/>
+    <path d="M16.3 9.2c1.7 1.8 1.7 4.6 0 6.4M19 6.8c3 3.3 3 7.1 0 10.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24">
+    <path d="M3.5 7.5v10a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-7l-2-2h-6a2 2 0 0 0-2 2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24">
+    <path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="app" id="app">
+  <div class="titlebar">
+    <div class="traffic">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+    </div>
+    <div class="titlebar-title">Neptune</div>
+    <div class="titlebar-status"><span class="status-dot"></span>本地索引已同步</div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <svg viewBox="0 0 1024 1024" aria-hidden="true"><use href="#logo-sym"/></svg>
+        <span class="brand-name">Neptune</span>
+      </div>
+
+      <div class="nav-label">浏览</div>
+      <div class="nav-item active" data-nav="home">
+        <svg class="ic"><use href="#i-home"/></svg><span>首页</span>
+      </div>
+      <div class="nav-item" data-nav="library">
+        <svg class="ic"><use href="#i-library"/></svg><span>音乐库</span>
+      </div>
+      <div class="nav-item" data-nav="classify">
+        <svg class="ic"><use href="#i-spark"/></svg><span>智能分类</span>
+      </div>
+      <div class="nav-item" data-nav="visual">
+        <svg class="ic"><use href="#i-wave"/></svg><span>播放特效</span>
+      </div>
+
+      <div class="playlist-head">
+        <span class="nav-label">我的歌单</span>
+        <button class="icon-btn" title="新建歌单"><svg class="ic"><use href="#i-plus"/></svg></button>
+      </div>
+      <div class="playlist-item active" data-pl="1">
+        <div class="pl-cover" style="background:linear-gradient(135deg,#4D8DFF,#2B5BE8)">
+          <svg class="ic"><use href="#i-wave"/></svg>
+        </div>
+        <div class="pl-meta"><b>深夜通勤</b><span>128 首</span></div>
+      </div>
+      <div class="playlist-item" data-pl="2">
+        <div class="pl-cover" style="background:linear-gradient(135deg,#2FE0C8,#1E8E88)">
+          <svg class="ic"><use href="#i-wave"/></svg>
+        </div>
+        <div class="pl-meta"><b>周末阅读</b><span>46 首</span></div>
+      </div>
+      <div class="playlist-item" data-pl="3">
+        <div class="pl-cover" style="background:linear-gradient(135deg,#FF7D6B,#FFB36B)">
+          <svg class="ic"><use href="#i-wave"/></svg>
+        </div>
+        <div class="pl-meta"><b>运动节奏</b><span>89 首</span></div>
+      </div>
+      <div class="playlist-item" data-pl="4">
+        <div class="pl-cover" style="background:linear-gradient(135deg,#D8C4FF,#8A6CFF)">
+          <svg class="ic"><use href="#i-heart"/></svg>
+        </div>
+        <div class="pl-meta"><b>我的收藏</b><span>215 首</span></div>
+      </div>
+
+      <div class="storage">
+        <div class="storage-head">
+          <svg class="ic"><use href="#i-folder"/></svg><span>本地音乐库</span>
+        </div>
+        <div class="storage-sub">D:\Music · 12.4 GB</div>
+        <div class="progress-mini"><i></i></div>
+        <div class="storage-note">已索引 2,846 首 · 上次扫描 2 小时前</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div class="page-title">首页</div>
+        <label class="search">
+          <svg class="ic"><use href="#i-search"/></svg>
+          <input type="search" placeholder="搜索音乐、艺人或专辑">
+        </label>
+        <div class="topbar-right">
+          <button class="icon-btn on" id="specToggle" title="设计规范">
+            <svg class="ic"><use href="#i-sliders"/></svg>
+          </button>
+          <div class="avatar">N</div>
+        </div>
+      </div>
+
+      <div class="content">
+        <section class="hero">
+          <canvas id="visualizer"></canvas>
+          <div class="hero-copy">
+            <div class="eyebrow"><span class="pulse"></span>正在播放</div>
+            <h1>让本地音乐重新流动</h1>
+            <p>自动扫描、索引并智能分类你的音乐库，把私人收藏整理成 Apple Music 般的体验。</p>
+            <div class="hero-stats">
+              <div><b>2,846</b><span>首曲目</span></div>
+              <div><b>412</b><span>张专辑</span></div>
+              <div><b>96%</b><span>智能分类</span></div>
+            </div>
+            <div class="hero-actions">
+              <button class="btn-primary" id="heroPlay">
+                <svg class="ic"><use href="#i-play"/></svg><span>播放精选</span>
+              </button>
+              <button class="btn-ghost">
+                <svg class="ic"><use href="#i-spark"/></svg><span>智能整理</span>
+              </button>
+            </div>
+          </div>
+          <div class="hero-brand">
+            <svg viewBox="0 0 1024 1024" aria-hidden="true"><use href="#logo-sym"/></svg>
+            <span>Neptune</span>
+          </div>
+          <div class="viz-label"><span class="live">LIVE</span>频谱极光 · 模拟数据</div>
+        </section>
+
+        <div class="genre-row">
+          <button class="genre-chip active"><span class="gdot" style="background:#4D8DFF"></span>全部</button>
+          <button class="genre-chip"><span class="gdot" style="background:#8FB8FF"></span>电子</button>
+          <button class="genre-chip"><span class="gdot" style="background:#D8C4FF"></span>古典</button>
+          <button class="genre-chip"><span class="gdot" style="background:#FFC978"></span>爵士</button>
+          <button class="genre-chip"><span class="gdot" style="background:#FF8E8E"></span>摇滚</button>
+          <button class="genre-chip"><span class="gdot" style="background:#7DE0C8"></span>氛围</button>
+          <button class="genre-chip"><span class="gdot" style="background:#A7E29A"></span>民谣</button>
+        </div>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>精选专辑</h2>
+            <button class="link-btn">查看全部</button>
+          </div>
+          <div class="album-grid">
+            <div class="album-card">
+              <div class="cover" style="background:linear-gradient(135deg,#0E2147,#2B5BE8)">
+                <svg viewBox="0 0 160 160" aria-hidden="true">
+                  <path d="M20 108h8l9-26 13 48 12-34 8 12h20" fill="none" stroke="#C9DBFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>
+                  <path d="M28 66h104M36 90h96" fill="none" stroke="#7DE0C8" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+                </svg>
+                <span class="tag">电子</span>
+                <button class="cover-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+              </div>
+              <h3>深海脉冲</h3>
+              <p>Neptune Studio · 2026</p>
+            </div>
+            <div class="album-card">
+              <div class="cover" style="background:linear-gradient(135deg,#1C2B4A,#8A6CFF)">
+                <svg viewBox="0 0 160 160" aria-hidden="true">
+                  <circle cx="80" cy="82" r="42" fill="none" stroke="#D8C4FF" stroke-width="7" opacity=".9"/>
+                  <circle cx="80" cy="82" r="24" fill="none" stroke="#C9DBFF" stroke-width="3" opacity=".7"/>
+                  <path d="M52 120c10-26 46-26 56 0" fill="none" stroke="#EAF2FF" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+                </svg>
+                <span class="tag">古典</span>
+                <button class="cover-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+              </div>
+              <h3>夜航环游</h3>
+              <p>Lumen Ensemble · 2025</p>
+            </div>
+            <div class="album-card">
+              <div class="cover" style="background:linear-gradient(135deg,#2A1E12,#FF7D6B)">
+                <svg viewBox="0 0 160 160" aria-hidden="true">
+                  <path d="M30 78c14-12 30-12 44 0s30 12 44 0c8-7 10-4 12-2" fill="none" stroke="#FFC978" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M30 104c14-12 30-12 44 0s30 12 44 0" fill="none" stroke="#FFB36B" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+                  <circle cx="130" cy="42" r="4" fill="#FFC978"/>
+                  <circle cx="24" cy="34" r="3" fill="#FFE3B8"/>
+                </svg>
+                <span class="tag">爵士</span>
+                <button class="cover-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+              </div>
+              <h3>午夜酒馆</h3>
+              <p>Blue Note Trio · 2024</p>
+            </div>
+            <div class="album-card">
+              <div class="cover" style="background:linear-gradient(135deg,#101B33,#FF6B9A)">
+                <svg viewBox="0 0 160 160" aria-hidden="true">
+                  <path d="M34 118V64M66 118V38M98 118V74M130 118V56" fill="none" stroke="#FF8E8E" stroke-width="14" stroke-linecap="round" opacity=".95"/>
+                  <path d="M34 92h96" fill="none" stroke="#EAF2FF" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+                </svg>
+                <span class="tag">摇滚</span>
+                <button class="cover-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+              </div>
+              <h3>电流竞技场</h3>
+              <p>Neon Riot · 2023</p>
+            </div>
+            <div class="album-card">
+              <div class="cover" style="background:linear-gradient(135deg,#0B3B3A,#2FE0C8)">
+                <svg viewBox="0 0 160 160" aria-hidden="true">
+                  <path d="M24 118c18-30 40-30 56-8 12 17 34 17 56-10" fill="none" stroke="#7DE0C8" stroke-width="7" stroke-linecap="round"/>
+                  <path d="M24 92c18-30 40-30 56-8 12 17 34 17 56-10" fill="none" stroke="#D8F6F0" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+                </svg>
+                <span class="tag">氛围</span>
+                <button class="cover-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+              </div>
+              <h3>浮游</h3>
+              <p>Deep Field · 2026</p>
+            </div>
+            <div class="album-card">
+              <div class="cover" style="background:linear-gradient(135deg,#223B2A,#A7E29A)">
+                <svg viewBox="0 0 160 160" aria-hidden="true">
+                  <path d="M80 120c-6-26 6-42 0-66M56 112c-6-24 6-38 0-60M104 112c-6-24 6-38 0-60" fill="none" stroke="#EAF7E4" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+                  <circle cx="80" cy="26" r="4" fill="#FFF3D6"/>
+                </svg>
+                <span class="tag">民谣</span>
+                <button class="cover-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+              </div>
+              <h3>风与木屋</h3>
+              <p>北地手风琴 · 2022</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>最近播放</h2>
+            <button class="link-btn">查看全部</button>
+          </div>
+          <div class="track-list">
+            <div class="track-row playing-row">
+              <div class="t-cover" style="background:linear-gradient(135deg,#0E2147,#2B5BE8)">
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <path d="M8 34h3l4-14 5 24 4-16 3 6h9" fill="none" stroke="#C9DBFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="t-meta">
+                <h4>潮汐信号</h4>
+                <p>Neptune Studio</p>
+              </div>
+              <span class="t-tag"><span class="gdot" style="background:#8FB8FF"></span>电子</span>
+              <span class="t-dur">4:12</span>
+              <button class="icon-btn t-play on" title="暂停"><svg class="ic"><use href="#i-pause"/></svg></button>
+            </div>
+            <div class="track-row">
+              <div class="t-cover" style="background:linear-gradient(135deg,#1C2B4A,#8A6CFF)">
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <circle cx="24" cy="24" r="13" fill="none" stroke="#D8C4FF" stroke-width="4"/>
+                </svg>
+              </div>
+              <div class="t-meta">
+                <h4>夜航序曲</h4>
+                <p>Lumen Ensemble</p>
+              </div>
+              <span class="t-tag"><span class="gdot" style="background:#D8C4FF"></span>古典</span>
+              <span class="t-dur">3:48</span>
+              <button class="icon-btn t-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+            </div>
+            <div class="track-row">
+              <div class="t-cover" style="background:linear-gradient(135deg,#2A1E12,#FF7D6B)">
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <path d="M9 30c6-6 12-6 18 0s12 6 18 0" fill="none" stroke="#FFC978" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="t-meta">
+                <h4>霓虹蓝调</h4>
+                <p>Blue Note Trio</p>
+              </div>
+              <span class="t-tag"><span class="gdot" style="background:#FFC978"></span>爵士</span>
+              <span class="t-dur">5:06</span>
+              <button class="icon-btn t-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+            </div>
+            <div class="track-row">
+              <div class="t-cover" style="background:linear-gradient(135deg,#0B3B3A,#2FE0C8)">
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <path d="M8 36c7-13 14-13 20-3 5 8 14 8 20-4" fill="none" stroke="#7DE0C8" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="t-meta">
+                <h4>零重力</h4>
+                <p>Deep Field</p>
+              </div>
+              <span class="t-tag"><span class="gdot" style="background:#7DE0C8"></span>氛围</span>
+              <span class="t-dur">6:21</span>
+              <button class="icon-btn t-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+            </div>
+            <div class="track-row">
+              <div class="t-cover" style="background:linear-gradient(135deg,#223B2A,#A7E29A)">
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <path d="M24 36c-3-13 2-21 0-32M14 34c-3-12 2-19 0-28M34 34c-3-12 2-19 0-28" fill="none" stroke="#EAF7E4" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="t-meta">
+                <h4>木屋晨光</h4>
+                <p>北地手风琴</p>
+              </div>
+              <span class="t-tag"><span class="gdot" style="background:#A7E29A"></span>民谣</span>
+              <span class="t-dur">4:03</span>
+              <button class="icon-btn t-play" title="播放"><svg class="ic"><use href="#i-play"/></svg></button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <footer class="player">
+    <div class="now">
+      <div class="n-cover" style="background:linear-gradient(135deg,#0E2147,#2B5BE8)">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M12 46h4l5-18 7 32 6-22 4 8h12" fill="none" stroke="#C9DBFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="n-meta">
+        <h5>潮汐信号</h5>
+        <p>Neptune Studio · 电子</p>
+      </div>
+      <div class="eq"><span></span><span></span><span></span></div>
+      <button class="icon-btn heart on" title="已收藏"><svg class="ic"><use href="#i-heart"/></svg></button>
+    </div>
+    <div class="transport">
+      <div class="controls">
+        <button class="ctrl" title="随机播放"><svg class="ic"><use href="#i-shuffle"/></svg></button>
+        <button class="ctrl" title="上一首"><svg class="ic"><use href="#i-prev"/></svg></button>
+        <button class="play-main" id="mainPlay" title="暂停">
+          <svg class="ic"><use href="#i-pause"/></svg>
+        </button>
+        <button class="ctrl" title="下一首"><svg class="ic"><use href="#i-next"/></svg></button>
+        <button class="ctrl" title="循环播放"><svg class="ic"><use href="#i-repeat"/></svg></button>
+      </div>
+      <div class="progress-row">
+        <span>1:24</span>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+        <span>4:12</span>
+      </div>
+    </div>
+    <div class="extras">
+      <button class="effect-pill" id="effectPill" title="切换播放特效">
+        <svg class="ic"><use href="#i-wave"/></svg>
+        <span class="pill-text">频谱极光</span>
+      </button>
+      <div class="vol">
+        <button class="ctrl" title="音量"><svg class="ic"><use href="#i-vol"/></svg></button>
+        <div class="vol-track"><div class="vol-fill"></div></div>
+      </div>
+    </div>
+  </footer>
+
+  <aside class="spec-panel open" id="specPanel" aria-label="Neptune 设计规范">
+    <div class="spec-head">
+      <svg class="ic"><use href="#i-sliders"/></svg>
+      <b>Neptune 设计规范</b>
+      <button class="icon-btn" id="specClose" title="关闭"><svg class="ic"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="spec-label">色彩 Tokens</div>
+    <div class="token-row"><span class="dot" style="background:#0A1226"></span><b>bg-1 主窗口</b><code>#0A1226</code></div>
+    <div class="token-row"><span class="dot" style="background:#16233F"></span><b>bg-3 选中</b><code>#16233F</code></div>
+    <div class="token-row"><span class="dot" style="background:#F2F6FF"></span><b>text-1 主文字</b><code>#F2F6FF</code></div>
+    <div class="token-row"><span class="dot" style="background:#4D8DFF"></span><b>accent 强调</b><code>#4D8DFF</code></div>
+    <div class="token-row"><span class="dot" style="background:#2FE0C8"></span><b>accent-2 辅助</b><code>#2FE0C8</code></div>
+    <div class="token-row"><span class="dot" style="background:#FF7D6B"></span><b>warm 收藏</b><code>#FF7D6B</code></div>
+    <div class="spec-label">字体与排版</div>
+    <div class="token-grid">
+      <div class="token-cell"><b>Display</b><span>28px · 600</span></div>
+      <div class="token-cell"><b>H1</b><span>22px · 600</span></div>
+      <div class="token-cell"><b>Body</b><span>14px · 400</span></div>
+      <div class="token-cell"><b>Micro</b><span>11px · 500</span></div>
+    </div>
+    <div class="spec-label">播放特效</div>
+    <ul class="fx-list">
+      <li><span class="n" style="background:linear-gradient(135deg,#4D8DFF,#8A6CFF)">1</span>频谱极光 · 底部频谱 + 极光流动</li>
+      <li><span class="n" style="background:linear-gradient(135deg,#2FE0C8,#1E8E88)">2</span>脉冲光谱 · 圆形频谱环</li>
+      <li><span class="n" style="background:linear-gradient(135deg,#FF7D6B,#FFB36B)">3</span>波形镜面 · 实时波形镜像</li>
+      <li><span class="n" style="background:linear-gradient(135deg,#101B33,#16233F)">4</span>黑胶唱片 · 旋转封面 + 唱臂</li>
+      <li><span class="n" style="background:linear-gradient(135deg,#8FB8FF,#FF6B9A)">5</span>粒子声场 · 频率粒子连线</li>
+      <li><span class="n" style="background:linear-gradient(135deg,#3D6BFF,#2FE0C8)">6</span>动态封面 · 主色流光渐变</li>
+    </ul>
+    <div class="spec-foot">深色海洋玻璃主题 · 8px 圆角 · 4pt 网格 · 字母间距 0</div>
+  </aside>
+
+  <script>
+    (() => {
+      const app = document.getElementById('app');
+      const canvas = document.getElementById('visualizer');
+      const ctx = canvas.getContext('2d');
+      const bars = 56;
+      const heights = new Float32Array(bars);
+      let W = 0;
+      let H = 0;
+
+      function resize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = rect.width;
+        H = rect.height;
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const rand = (a, b) => a + Math.random() * (b - a);
+
+      function draw(t) {
+        const x = t / 1000;
+        for (let i = 0; i < bars; i++) {
+          const target = Math.pow(rand(0.08, 1), 1.7) * H * 0.5;
+          heights[i] += (target - heights[i]) * 0.1;
+        }
+        ctx.clearRect(0, 0, W, H);
+
+        const grad = ctx.createLinearGradient(0, 0, W, 0);
+        grad.addColorStop(0, 'rgba(77,141,255,.16)');
+        grad.addColorStop(0.5, 'rgba(47,224,200,.10)');
+        grad.addColorStop(1, 'rgba(216,196,255,.16)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.save();
+        for (let k = 0; k < 2; k++) {
+          ctx.beginPath();
+          ctx.lineWidth = 26 - k * 8;
+          ctx.lineCap = 'round';
+          ctx.strokeStyle = k ? 'rgba(47,224,200,.16)' : 'rgba(77,141,255,.24)';
+          for (let i = 0; i <= 9; i++) {
+            const px = (i / 9) * W;
+            const py = H * 0.22 + Math.sin(x * 1.1 + i * 0.9 + k * 2.1) * H * 0.05 + Math.cos(x * 0.7 + i * 0.6) * H * 0.03;
+            i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        const gap = 3;
+        const bw = Math.floor((W - gap * (bars - 1)) / bars);
+        const base = H * 0.78;
+        for (let i = 0; i < bars; i++) {
+          const h = Math.max(4, heights[i]);
+          const bx = i * (bw + gap);
+          ctx.fillStyle = 'rgba(201,219,255,.82)';
+          ctx.beginPath();
+          ctx.roundRect(bx, base - h, bw, h, 3);
+          ctx.fill();
+        }
+        ctx.fillStyle = 'rgba(77,141,255,.25)';
+        ctx.beginPath();
+        ctx.roundRect(0, base + 2, W, 3, 2);
+        ctx.fill();
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+
+      const panel = document.getElementById('specPanel');
+      const specToggle = document.getElementById('specToggle');
+      const specClose = document.getElementById('specClose');
+
+      function setSpec(open) {
+        panel.classList.toggle('open', open);
+        specToggle.classList.toggle('on', open);
+      }
+      specToggle.addEventListener('click', () => setSpec(!panel.classList.contains('open')));
+      specClose.addEventListener('click', () => setSpec(false));
+
+      const playUses = {
+        main: document.querySelector('#mainPlay use'),
+        hero: document.querySelector('#heroPlay use')
+      };
+
+      function syncIcons() {
+        const playing = app.classList.contains('playing');
+        playUses.main.setAttribute('href', playing ? '#i-pause' : '#i-play');
+        playUses.hero.setAttribute('href', playing ? '#i-pause' : '#i-play');
+        document.querySelectorAll('.track-row').forEach((row) => {
+          const use = row.querySelector('.t-play use');
+          use.setAttribute('href', row.classList.contains('playing-row') ? '#i-pause' : '#i-play');
+        });
+      }
+
+      document.querySelectorAll('#heroPlay, #mainPlay').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          app.classList.toggle('playing');
+          syncIcons();
+        });
+      });
+
+      document.querySelectorAll('.t-play').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.track-row').forEach((r) => r.classList.remove('playing-row'));
+          btn.closest('.track-row').classList.add('playing-row');
+          app.classList.add('playing');
+          syncIcons();
+        });
+      });
+
+      document.querySelectorAll('.genre-chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.genre-chip').forEach((c) => c.classList.remove('active'));
+          chip.classList.add('active');
+        });
+      });
+
+      document.querySelectorAll('.nav-item, .playlist-item').forEach((item) => {
+        item.addEventListener('click', () => {
+          const group = item.classList.contains('nav-item') ? '.nav-item' : '.playlist-item';
+          document.querySelectorAll(group).forEach((i) => i.classList.remove('active'));
+          item.classList.add('active');
+        });
+      });
+
+      const effects = ['频谱极光', '脉冲光谱', '波形镜面', '黑胶唱片', '粒子声场', '动态封面'];
+      let effectIndex = 0;
+      document.getElementById('effectPill').addEventListener('click', (e) => {
+        effectIndex = (effectIndex + 1) % effects.length;
+        e.currentTarget.querySelector('.pill-text').textContent = effects[effectIndex];
+      });
+    })();
+  </script>
+</body>
+</html>
