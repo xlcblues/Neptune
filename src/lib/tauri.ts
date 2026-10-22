@@ -26,6 +26,11 @@ export async function addFolders(paths: string[]): Promise<void> {
   await invoke('add_folders', { paths })
 }
 
+export async function ensureAudioAccess(path: string): Promise<void> {
+  if (!isTauriRuntime()) return
+  await invoke('ensure_audio_access', { path })
+}
+
 export interface ListTracksOptions {
   query?: string
   sort?: string

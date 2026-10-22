@@ -1,4 +1,4 @@
-import { convertFileSrc, isTauriRuntime } from './tauri'
+import { convertFileSrc, ensureAudioAccess, isTauriRuntime } from './tauri'
 
 export type AudioEvent =
   | { type: 'play' }
@@ -25,18 +25,21 @@ class AudioEngine {
     }
   }
 
-  async play(url: string): Promise<void> {
-    const audio = this.ensureElement()
-    const context = this.ensureGraph()
-    if (context.state === 'suspended') {
-      await context.resume()
-    }
-    if (this.currentUrl !== url) {
-      this.currentUrl = url
-      audio.src = url
-      audio.load()
-    }
+  async play(url: string, sourcePath?: string): Promise<void> {
     try {
+      const audio = this.ensureElement()
+      if (sourcePath && isTauriRuntime()) {
+        await ensureAudioAccess(sourcePath)
+      }
+      const context = this.ensureGraph()
+      if (context.state === 'suspended') {
+        await context.resume()
+      }
+      if (this.currentUrl !== url) {
+        this.currentUrl = url
+        audio.src = url
+        audio.load()
+      }
       await audio.play()
     } catch (error) {
       this.emit({
@@ -47,12 +50,12 @@ class AudioEngine {
   }
 
   async resume(): Promise<void> {
-    const audio = this.ensureElement()
-    const context = this.ensureGraph()
-    if (context.state === 'suspended') {
-      await context.resume()
-    }
     try {
+      const audio = this.ensureElement()
+      const context = this.ensureGraph()
+      if (context.state === 'suspended') {
+        await context.resume()
+      }
       await audio.play()
     } catch (error) {
       this.emit({

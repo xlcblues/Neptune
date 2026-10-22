@@ -45,7 +45,7 @@ async function loadTrack(queue: Track[], index: number): Promise<void> {
     error: null,
   })
   updateMediaSession(track)
-  await audioEngine.play(trackSourceUrl(track.path, track.id))
+  await audioEngine.play(trackSourceUrl(track.path, track.id), track.path)
 }
 
 interface PlayerState {

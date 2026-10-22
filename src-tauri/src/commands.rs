@@ -56,3 +56,17 @@ pub fn get_track(
 pub fn get_library_stats(db: State<'_, Database>) -> Result<crate::db::LibraryStats, String> {
     db.library_stats().map_err(|err| err.to_string())
 }
+
+#[tauri::command]
+pub fn ensure_audio_access(app: AppHandle, path: String) -> Result<(), String> {
+    let file = std::path::Path::new(&path);
+    if !file.is_file() {
+        return Err(format!("文件不存在：{path}"));
+    }
+    let dir = file
+        .parent()
+        .ok_or_else(|| "路径无效".to_string())?;
+    app.asset_protocol_scope()
+        .allow_directory(dir, true)
+        .map_err(|err| format!("无法授权音频目录：{}，{err}", dir.display()))
+}

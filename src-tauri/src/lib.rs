@@ -33,6 +33,7 @@ pub fn run() {
             commands::list_tracks,
             commands::get_track,
             commands::get_library_stats,
+            commands::ensure_audio_access,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application")
