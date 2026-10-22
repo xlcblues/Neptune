@@ -93,6 +93,7 @@ class AudioEngine {
 
     const audio = new Audio()
     audio.preload = 'auto'
+    audio.crossOrigin = 'anonymous'
     audio.volume = this.volume
 
     audio.addEventListener('play', () => this.emit({ type: 'play' }))
@@ -112,9 +113,15 @@ class AudioEngine {
     })
     audio.addEventListener('ended', () => this.emit({ type: 'ended' }))
     audio.addEventListener('error', () => {
+      const code = audio.error?.code
+      const message =
+        audio.error?.message ||
+        (code === 4
+          ? '无法加载音频：目录未授权或格式不受支持'
+          : '无法播放该文件')
       this.emit({
         type: 'error',
-        message: audio.error?.message || '无法播放该文件',
+        message,
       })
     })
 

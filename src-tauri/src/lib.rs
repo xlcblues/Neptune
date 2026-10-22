@@ -13,6 +13,12 @@ pub fn run() {
             let data_dir = app.path().app_data_dir()?;
             let database = Database::open(&data_dir)?;
 
+            // Runtime asset scope is not persisted across launches; re-allow
+            // every scanned root so previously indexed tracks stay playable.
+            for root in database.list_roots()? {
+                let _ = app.asset_protocol_scope().allow_directory(&root, true);
+            }
+
             let watcher_app = app.handle().clone();
             let watcher_db = database.clone();
             std::thread::spawn(move || {
