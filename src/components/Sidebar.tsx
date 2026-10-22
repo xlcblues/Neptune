@@ -1,8 +1,15 @@
-import { AudioWaveform, HardDrive, Heart, Home, LibraryBig, Plus, Sparkles } from 'lucide-react'
+import { AudioWaveform, HardDrive, Heart, Home, LibraryBig, Monitor, Moon, Plus, Sparkles, Sun } from 'lucide-react'
 import { useUiStore } from '../store/ui'
 import { useLibraryStore } from '../store/library'
+import { useTheme, type ThemePreference } from '../theme'
 import type { NavKey } from '../store/ui'
 import { IconButton } from './ui/IconButton'
+
+const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+  { value: 'system', label: '跟随系统', icon: Monitor },
+  { value: 'light', label: '浅色', icon: Sun },
+  { value: 'dark', label: '深色', icon: Moon },
+]
 
 const navItems: { key: NavKey; label: string; icon: typeof Home }[] = [
   { key: 'home', label: '首页', icon: Home },
@@ -21,6 +28,7 @@ const playlists = [
 export function Sidebar() {
   const nav = useUiStore((s) => s.nav)
   const setNav = useUiStore((s) => s.setNav)
+  const { preference, setPreference } = useTheme()
   const stats = useLibraryStore((s) => s.stats)
   const scanning = useLibraryStore((s) => s.scanning)
   const scanProgress = useLibraryStore((s) => s.scanProgress)
@@ -81,6 +89,28 @@ export function Sidebar() {
           </div>
         </div>
       ))}
+
+      <div className="theme-control">
+        <span className="nav-label">外观</span>
+        <div className="theme-switch" role="group" aria-label="外观主题">
+          {themeOptions.map((option) => {
+            const Icon = option.icon
+            return (
+              <button
+                key={option.value}
+                type="button"
+                className={preference === option.value ? 'active' : ''}
+                title={option.label}
+                aria-label={option.label}
+                aria-pressed={preference === option.value}
+                onClick={() => setPreference(option.value)}
+              >
+                <Icon size={15} />
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <button className="storage" onClick={() => setNav('library')}>
         <div className="storage-head">

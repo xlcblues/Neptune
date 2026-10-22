@@ -114,7 +114,7 @@
   height: 4px;
   flex: none;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--scan-track);
   overflow: hidden;
 }
 
@@ -149,14 +149,14 @@
   padding: 0 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-soft);
   color: var(--text3);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .search-box:focus-within {
-  border-color: rgba(77, 141, 255, 0.6);
-  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--accent-border);
+  background: var(--fill);
 }
 
 .search-box input {
@@ -180,13 +180,13 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--fill-strong);
   color: var(--text2);
   cursor: pointer;
 }
 
 .search-clear:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--fill-strong);
   color: var(--text1);
 }
 
@@ -236,10 +236,10 @@
 }
 
 .error-banner {
-  border: 1px solid rgba(255, 125, 107, 0.35);
+  border: 1px solid var(--danger-border);
   border-radius: 8px;
   padding: 10px 14px;
-  background: rgba(255, 125, 107, 0.1);
+  background: var(--danger-bg);
   color: var(--warm);
   font-size: 12px;
 }
@@ -265,7 +265,7 @@
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: rgba(8, 14, 30, 0.5);
+  background: var(--list-bg);
 }
 
 .track-virtual {
@@ -283,19 +283,19 @@
   align-items: center;
   gap: 12px;
   padding: 0 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--row-border);
   color: var(--text2);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .track-row:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--fill-soft);
   color: var(--text1);
 }
 
 .track-row.active {
-  background: rgba(77, 141, 255, 0.13);
+  background: var(--row-active);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
@@ -306,7 +306,7 @@
   border-radius: 6px;
   display: grid;
   place-items: center;
-  color: rgba(255, 255, 255, 0.94);
+  color: var(--cover-text);
   overflow: hidden;
 }
 
@@ -443,7 +443,7 @@
   border-radius: 8px;
   display: grid;
   place-items: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--cover-text);
   overflow: hidden;
 }
 
@@ -501,7 +501,7 @@
   border: 0;
   border-radius: 8px;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #fff;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: not-allowed;
@@ -523,7 +523,7 @@
   padding: 0 16px;
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--fill-soft);
   color: var(--text1);
   font-size: 13px;
   font-weight: 600;
@@ -532,8 +532,8 @@
 }
 
 .secondary-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--fill);
+  border-color: var(--border-strong);
 }
 
 @media (max-width: 1120px) {

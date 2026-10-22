@@ -1,4 +1,61 @@
 :root {
+  color-scheme: light;
+
+  --bg0: #e9f0fb;
+  --bg1: #f3f7fd;
+  --bg2: #e8eef9;
+  --bg3: #d7e4fb;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --border: rgba(15, 31, 66, 0.1);
+  --border-strong: rgba(15, 31, 66, 0.16);
+  --text1: #101d3d;
+  --text2: #43537c;
+  --text3: #6c7c9d;
+  --accent: #2f6bff;
+  --accent-2: #2446c8;
+  --accent3: #0fa894;
+  --warm: #cf4a3c;
+  --pink: #cf4a7d;
+  --success: #13885f;
+
+  --titlebar-bg: rgba(255, 255, 255, 0.84);
+  --sidebar-bg: rgba(236, 242, 252, 0.9);
+  --fill-soft: rgba(15, 31, 66, 0.055);
+  --fill: rgba(15, 31, 66, 0.09);
+  --fill-strong: rgba(15, 31, 66, 0.16);
+  --accent-soft: rgba(47, 107, 255, 0.12);
+  --accent-border: rgba(47, 107, 255, 0.55);
+  --on-accent: #ffffff;
+  --accent-shadow: rgba(36, 70, 200, 0.26);
+
+  --hero-bg: linear-gradient(120deg, #dfe9ff 0%, #edf3fc 55%, #f7faff 100%);
+  --hero-glow:
+    radial-gradient(600px 220px at 18% 20%, rgba(47, 107, 255, 0.2), transparent 65%),
+    radial-gradient(480px 200px at 78% 86%, rgba(15, 168, 148, 0.14), transparent 60%);
+  --hero-logo-shadow: rgba(47, 107, 255, 0.3);
+  --eyebrow-text: #0a6f63;
+  --eyebrow-bg: rgba(15, 168, 148, 0.12);
+  --eyebrow-border: rgba(15, 168, 148, 0.32);
+  --cover-text: rgba(255, 255, 255, 0.98);
+  --row-active: rgba(47, 107, 255, 0.12);
+  --row-border: rgba(15, 31, 66, 0.06);
+  --list-bg: rgba(255, 255, 255, 0.55);
+  --danger-bg: rgba(207, 74, 60, 0.1);
+  --danger-border: rgba(207, 74, 60, 0.32);
+  --scan-track: rgba(15, 31, 66, 0.1);
+  --scroll-thumb: rgba(15, 31, 66, 0.18);
+  --focus-ring: rgba(47, 107, 255, 0.55);
+
+  --radius-card: 8px;
+  --radius-pill: 999px;
+  --font-ui: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', Inter,
+    -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
   --bg0: #050b17;
   --bg1: #0a1226;
   --bg2: #101b33;
@@ -16,8 +73,32 @@
   --warm: #ff7d6b;
   --pink: #ff6b9a;
   --success: #3ed598;
-  --radius-card: 8px;
-  --radius-pill: 999px;
-  --font-ui: 'Segoe UI Variable Display', 'Segoe UI Variable', 'Segoe UI', Inter,
-    -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  --titlebar-bg: rgba(5, 9, 18, 0.82);
+  --sidebar-bg: rgba(8, 14, 30, 0.74);
+  --fill-soft: rgba(255, 255, 255, 0.06);
+  --fill: rgba(255, 255, 255, 0.09);
+  --fill-strong: rgba(255, 255, 255, 0.18);
+  --accent-soft: rgba(77, 141, 255, 0.14);
+  --accent-border: rgba(77, 141, 255, 0.6);
+  --on-accent: #ffffff;
+  --accent-shadow: rgba(43, 91, 232, 0.35);
+
+  --hero-bg: linear-gradient(120deg, #0e2147 0%, #101b33 55%, #16233f 100%);
+  --hero-glow:
+    radial-gradient(600px 220px at 18% 20%, rgba(77, 141, 255, 0.32), transparent 65%),
+    radial-gradient(480px 200px at 78% 86%, rgba(47, 224, 200, 0.18), transparent 60%);
+  --hero-logo-shadow: rgba(77, 141, 255, 0.35);
+  --eyebrow-text: #8ff0e2;
+  --eyebrow-bg: rgba(47, 224, 200, 0.14);
+  --eyebrow-border: rgba(47, 224, 200, 0.32);
+  --cover-text: rgba(255, 255, 255, 0.94);
+  --row-active: rgba(77, 141, 255, 0.13);
+  --row-border: rgba(255, 255, 255, 0.05);
+  --list-bg: rgba(8, 14, 30, 0.5);
+  --danger-bg: rgba(255, 125, 107, 0.1);
+  --danger-border: rgba(255, 125, 107, 0.35);
+  --scan-track: rgba(255, 255, 255, 0.12);
+  --scroll-thumb: rgba(255, 255, 255, 0.12);
+  --focus-ring: rgba(77, 141, 255, 0.7);
 }
