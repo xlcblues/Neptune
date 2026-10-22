@@ -1,6 +1,6 @@
 use crate::db::Database;
 use crate::indexer;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 #[tauri::command]
 pub fn add_folders(
@@ -12,6 +12,9 @@ pub fn add_folders(
         if !std::path::Path::new(path).is_dir() {
             return Err(format!("目录不存在：{path}"));
         }
+        app.asset_protocol_scope()
+            .allow_directory(path, true)
+            .map_err(|err| format!("无法授权音频目录：{path}，{err}"))?;
         db.insert_scan_job(path).map_err(|err| err.to_string())?;
     }
 

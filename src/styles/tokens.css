@@ -46,6 +46,9 @@
   --scan-track: rgba(15, 31, 66, 0.1);
   --scroll-thumb: rgba(15, 31, 66, 0.18);
   --focus-ring: rgba(47, 107, 255, 0.55);
+  --cover-scrim: rgba(15, 31, 66, 0.42);
+  --cover-shadow: 0 4px 12px rgba(15, 31, 66, 0.16);
+  --popover-shadow: 0 18px 44px rgba(15, 31, 66, 0.18), 0 2px 10px rgba(15, 31, 66, 0.12);
 
   --radius-card: 8px;
   --radius-pill: 999px;
@@ -101,4 +104,7 @@
   --scan-track: rgba(255, 255, 255, 0.12);
   --scroll-thumb: rgba(255, 255, 255, 0.12);
   --focus-ring: rgba(77, 141, 255, 0.7);
+  --cover-scrim: rgba(4, 9, 22, 0.55);
+  --cover-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --popover-shadow: 0 18px 44px rgba(0, 0, 0, 0.5), 0 2px 10px rgba(0, 0, 0, 0.34);
 }

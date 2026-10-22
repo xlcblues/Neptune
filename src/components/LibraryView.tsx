@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   ArrowDown,
@@ -11,13 +10,17 @@ import {
   ListMusic,
   Loader2,
   Music2,
+  Pause,
+  Play,
   RefreshCw,
   Search,
   X,
 } from 'lucide-react'
 import type { Track } from '../types/track'
 import { coverUrl, isTauriRuntime, onScanProgress, pickFolders } from '../lib/tauri'
+import { trackCoverStyle } from '../lib/cover'
 import { useLibraryStore } from '../store/library'
+import { usePlayerStore } from '../store/player'
 import type { SortKey } from '../store/library'
 import { IconButton } from './ui/IconButton'
 import { Tag } from './ui/Tag'
@@ -28,15 +31,6 @@ const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'album', label: '专辑' },
   { key: 'duration', label: '时长' },
   { key: 'added', label: '最近添加' },
-]
-
-const coverGradients = [
-  'linear-gradient(135deg,#4D8DFF,#2B5BE8)',
-  'linear-gradient(135deg,#2FE0C8,#1E8E88)',
-  'linear-gradient(135deg,#FF7D6B,#FFB36B)',
-  'linear-gradient(135deg,#D8C4FF,#8A6CFF)',
-  'linear-gradient(135deg,#FF6B9A,#B85CFF)',
-  'linear-gradient(135deg,#3D6BFF,#2FE0C8)',
 ]
 
 const genrePalette: Record<string, string> = {
@@ -52,23 +46,6 @@ const genrePalette: Record<string, string> = {
   Ambient: '#7DE0C8',
   民谣: '#A7E29A',
   Acoustic: '#A7E29A',
-}
-
-function hashIndex(value: string, size: number): number {
-  let hash = 0
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
-  }
-  return hash % size
-}
-
-function coverStyle(track: Track, size?: string): CSSProperties {
-  return {
-    background: coverGradients[hashIndex(track.path, coverGradients.length)],
-    width: size === 'large' ? '100%' : undefined,
-    height: size === 'large' ? undefined : undefined,
-    aspectRatio: size === 'large' ? '1' : undefined,
-  }
 }
 
 function formatDuration(ms: number): string {
@@ -102,7 +79,15 @@ function formatDate(iso: string): string {
   })
 }
 
-function TrackDetail({ track, onClose }: { track: Track; onClose: () => void }) {
+function TrackDetail({
+  track,
+  onClose,
+  onPlay,
+}: {
+  track: Track
+  onClose: () => void
+  onPlay: () => void
+}) {
   const url = coverUrl(track.coverPath)
   return (
     <aside className="track-detail glass-card">
@@ -112,7 +97,7 @@ function TrackDetail({ track, onClose }: { track: Track; onClose: () => void }) 
           <X size={15} />
         </IconButton>
       </div>
-      <div className="detail-cover" style={coverStyle(track, 'large')}>
+      <div className="detail-cover" style={trackCoverStyle(track.path)}>
         {url ? <img src={url} alt="" /> : <Music2 size={34} />}
       </div>
       <h2>{track.title}</h2>
@@ -141,8 +126,9 @@ function TrackDetail({ track, onClose }: { track: Track; onClose: () => void }) 
         </span>
       </div>
       <div className="detail-path">{track.path}</div>
-      <button className="detail-play" disabled>
-        播放
+      <button className="detail-play" onClick={onPlay}>
+        <Play size={15} fill="currentColor" />
+        <span>播放</span>
       </button>
     </aside>
   )
@@ -168,6 +154,10 @@ export function LibraryView() {
   const refresh = useLibraryStore((s) => s.refresh)
   const loadMore = useLibraryStore((s) => s.loadMore)
   const addFolders = useLibraryStore((s) => s.addFolders)
+  const playContext = usePlayerStore((s) => s.playContext)
+  const currentTrack = usePlayerStore((s) => s.current)
+  const isPlaying = usePlayerStore((s) => s.isPlaying)
+  const togglePlay = usePlayerStore((s) => s.togglePlay)
 
   const [localQuery, setLocalQuery] = useState(query)
   const [selected, setSelected] = useState<Track | null>(null)
@@ -219,6 +209,11 @@ export function LibraryView() {
   const handleAddFolders = async () => {
     const paths = await pickFolders()
     if (paths.length > 0) await addFolders(paths)
+  }
+
+  const handlePlayTrack = (track: Track) => {
+    const index = tracks.findIndex((item) => item.id === track.id)
+    void playContext(tracks, index < 0 ? 0 : index)
   }
 
   return (
@@ -344,15 +339,44 @@ export function LibraryView() {
                       if (!track) return null
                       const url = coverUrl(track.coverPath)
                       const active = selected?.id === track.id
+                      const isCurrent = currentTrack?.id === track.id
+                      const rowClass = [
+                        'track-row',
+                        active ? 'active' : '',
+                        isCurrent ? 'current' : '',
+                        isCurrent && isPlaying ? 'playing' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')
                       return (
                         <div
                           key={virtualRow.key}
-                          className={`track-row ${active ? 'active' : ''}`}
+                          className={rowClass}
                           style={{ transform: `translateY(${virtualRow.start}px)` }}
                           onClick={() => setSelected(track)}
                         >
-                          <div className="track-cover" style={coverStyle(track)}>
+                          <div className="track-cover" style={trackCoverStyle(track.path)}>
                             {url ? <img src={url} alt="" loading="lazy" /> : <Music2 size={17} />}
+                            <button
+                              type="button"
+                              className="track-play-btn"
+                              title={isCurrent && isPlaying ? '暂停' : '播放'}
+                              aria-label={isCurrent && isPlaying ? '暂停' : '播放'}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                if (isCurrent && isPlaying) {
+                                  togglePlay()
+                                } else {
+                                  handlePlayTrack(track)
+                                }
+                              }}
+                            >
+                              {isCurrent && isPlaying ? (
+                                <Pause size={14} fill="currentColor" />
+                              ) : (
+                                <Play size={14} fill="currentColor" />
+                              )}
+                            </button>
                           </div>
                           <div className="track-main">
                             <b>{track.title}</b>
@@ -380,7 +404,13 @@ export function LibraryView() {
               )}
             </div>
           </div>
-          {selected ? <TrackDetail track={selected} onClose={() => setSelected(null)} /> : null}
+          {selected ? (
+            <TrackDetail
+              track={selected}
+              onClose={() => setSelected(null)}
+              onPlay={() => handlePlayTrack(selected)}
+            />
+          ) : null}
         </div>
       </div>
     </div>

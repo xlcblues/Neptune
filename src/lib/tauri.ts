@@ -3,6 +3,8 @@ import { listen } from '@tauri-apps/api/event'
 import { open } from '@tauri-apps/plugin-dialog'
 import type { LibraryStats, ScanProgress, Track } from '../types/track'
 
+export { convertFileSrc }
+
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 }

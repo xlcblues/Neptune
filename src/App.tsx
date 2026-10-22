@@ -4,8 +4,20 @@ import { Sidebar } from './components/Sidebar'
 import { HomeView } from './components/HomeView'
 import { LibraryView } from './components/LibraryView'
 import { PlaceholderView } from './components/PlaceholderView'
+import { PlayerBar } from './components/PlayerBar'
 import { useUiStore } from './store/ui'
 import { useLibraryStore } from './store/library'
+import { usePlayerStore } from './store/player'
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return (
+    target.isContentEditable ||
+    target.tagName === 'INPUT' ||
+    target.tagName === 'TEXTAREA' ||
+    target.tagName === 'SELECT'
+  )
+}
 
 export default function App() {
   const nav = useUiStore((s) => s.nav)
@@ -14,6 +26,41 @@ export default function App() {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return
+      const player = usePlayerStore.getState()
+      switch (event.code) {
+        case 'Space':
+          event.preventDefault()
+          player.togglePlay()
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          player.seek(player.currentTime - 15)
+          break
+        case 'ArrowRight':
+          event.preventDefault()
+          player.seek(player.currentTime + 15)
+          break
+        case 'MediaPlayPause':
+          event.preventDefault()
+          player.togglePlay()
+          break
+        case 'MediaTrackNext':
+          event.preventDefault()
+          player.next()
+          break
+        case 'MediaTrackPrevious':
+          event.preventDefault()
+          player.previous()
+          break
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className="app">
@@ -30,6 +77,7 @@ export default function App() {
           )}
         </main>
       </div>
+      <PlayerBar />
     </div>
   )
 }

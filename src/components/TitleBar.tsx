@@ -9,7 +9,7 @@ export function TitleBar() {
       </div>
       <div className="titlebar-status">
         <span className="status-dot" />
-        本地索引引擎 · M0
+        播放内核 · M2
       </div>
       <WindowControls />
     </header>
