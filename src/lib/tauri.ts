@@ -1,7 +1,15 @@
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { open } from '@tauri-apps/plugin-dialog'
-import type { LibraryStats, ScanProgress, Track } from '../types/track'
+import type {
+  ClassificationItem,
+  ClassificationPage,
+  ClassifyProgress,
+  ClassifyStats,
+  LibraryStats,
+  ScanProgress,
+  Track,
+} from '../types/track'
 
 export { convertFileSrc }
 
@@ -59,6 +67,284 @@ export async function onScanProgress(
   if (!isTauriRuntime()) return () => {}
   const unlisten = await listen<ScanProgress>('scan_progress', (event) => handler(event.payload))
   return unlisten
+}
+
+export async function listClassifications(
+  status: string | null,
+  page = 0,
+  limit = 500,
+): Promise<ClassificationPage> {
+  if (!isTauriRuntime()) return mockClassificationPage(status, page, limit)
+  return invoke<ClassificationPage>('list_classifications', { status, page, limit })
+}
+
+export async function getClassifyStats(): Promise<ClassifyStats> {
+  if (!isTauriRuntime()) return mockClassifyStats()
+  return invoke<ClassifyStats>('get_classify_stats')
+}
+
+export async function applyGenre(trackId: number, genre: string): Promise<void> {
+  if (!isTauriRuntime()) {
+    const item = mockClassifications.find((entry) => entry.id === trackId)
+    if (item) {
+      item.currentGenre = genre
+      item.suggestedGenre = genre
+      item.source = 'manual'
+      item.confidence = 1
+      item.status = 'classified'
+    }
+    return
+  }
+  await invoke('apply_genre', { trackId, genre })
+}
+
+export async function applyGenresBatch(ids: number[], genre: string): Promise<number> {
+  if (!isTauriRuntime()) {
+    let applied = 0
+    for (const item of mockClassifications) {
+      if (ids.includes(item.id)) {
+        item.currentGenre = genre
+        item.suggestedGenre = genre
+        item.source = 'manual'
+        item.confidence = 1
+        item.status = 'classified'
+        applied += 1
+      }
+    }
+    return applied
+  }
+  return invoke<number>('apply_genres_batch', { ids, genre })
+}
+
+export async function classifyAll(useNetwork: boolean): Promise<void> {
+  if (!isTauriRuntime()) {
+    runMockClassify(useNetwork)
+    return
+  }
+  await invoke('classify_all', { useNetwork })
+}
+
+export async function classifyBatch(ids: number[], useNetwork: boolean): Promise<void> {
+  if (!isTauriRuntime()) {
+    runMockClassify(useNetwork, ids)
+    return
+  }
+  await invoke('classify_batch', { ids, useNetwork })
+}
+
+export async function onClassifyProgress(
+  handler: (progress: ClassifyProgress) => void,
+): Promise<() => void> {
+  if (!isTauriRuntime()) {
+    mockProgressHandler = handler
+    return () => {
+      if (mockProgressHandler === handler) mockProgressHandler = null
+    }
+  }
+  const unlisten = await listen<ClassifyProgress>('classify_progress', (event) =>
+    handler(event.payload),
+  )
+  return unlisten
+}
+
+const mockClassifications: ClassificationItem[] = [
+  {
+    id: 1,
+    title: '潮汐',
+    artist: '深海电台',
+    album: '蓝色时刻',
+    currentGenre: '电子',
+    suggestedGenre: '电子',
+    confidence: 0.95,
+    source: 'metadata',
+    status: 'classified',
+  },
+  {
+    id: 2,
+    title: '夜航',
+    artist: 'Echo Parade',
+    album: 'City Lights',
+    currentGenre: '',
+    suggestedGenre: '爵士',
+    confidence: 0.9,
+    source: 'network',
+    status: 'pending',
+  },
+  {
+    id: 3,
+    title: '慢板',
+    artist: '林晚',
+    album: '一席之地',
+    currentGenre: '古典',
+    suggestedGenre: '独立',
+    confidence: 0.72,
+    source: 'local',
+    status: 'pending',
+  },
+  {
+    id: 4,
+    title: '街角咖啡',
+    artist: 'Miles Quartet',
+    album: 'Sunday Sessions',
+    currentGenre: '爵士',
+    suggestedGenre: '爵士',
+    confidence: 0.95,
+    source: 'metadata',
+    status: 'classified',
+  },
+  {
+    id: 5,
+    title: '雾中灯塔',
+    artist: '北屿',
+    album: '海岸线',
+    currentGenre: '',
+    suggestedGenre: null,
+    confidence: null,
+    source: null,
+    status: 'unclassified',
+  },
+  {
+    id: 6,
+    title: '麦田',
+    artist: '乔木与溪',
+    album: '四季来信',
+    currentGenre: '民谣',
+    suggestedGenre: '民谣',
+    confidence: 0.95,
+    source: 'metadata',
+    status: 'classified',
+  },
+  {
+    id: 7,
+    title: '心跳频率',
+    artist: 'Pulse Lab',
+    album: 'Neon Garden',
+    currentGenre: '',
+    suggestedGenre: null,
+    confidence: null,
+    source: null,
+    status: 'unclassified',
+  },
+  {
+    id: 8,
+    title: '午后',
+    artist: '安叙',
+    album: '小事集',
+    currentGenre: '',
+    suggestedGenre: '轻音乐',
+    confidence: 0.8,
+    source: 'local',
+    status: 'pending',
+  },
+  {
+    id: 9,
+    title: '极光之后',
+    artist: 'Aurora Waves',
+    album: 'Northern Bloom',
+    currentGenre: '氛围',
+    suggestedGenre: '氛围',
+    confidence: 0.95,
+    source: 'metadata',
+    status: 'classified',
+  },
+  {
+    id: 10,
+    title: '城市的雨',
+    artist: '陈澈',
+    album: '夜行手记',
+    currentGenre: '',
+    suggestedGenre: null,
+    confidence: null,
+    source: null,
+    status: 'unclassified',
+  },
+]
+
+let mockProgressHandler: ((progress: ClassifyProgress) => void) | null = null
+let mockClassifyRunning = false
+
+function mockClassifyStats(): ClassifyStats {
+  const sourceCounts: Record<string, number> = {
+    metadata: 0,
+    local: 0,
+    network: 0,
+    manual: 0,
+  }
+  for (const item of mockClassifications) {
+    if (item.source && sourceCounts[item.source] !== undefined) {
+      sourceCounts[item.source] += 1
+    }
+  }
+  return {
+    total: mockClassifications.length,
+    classified: mockClassifications.filter((item) => item.status === 'classified').length,
+    pending: mockClassifications.filter((item) => item.status === 'pending').length,
+    unclassified: mockClassifications.filter((item) => item.status === 'unclassified').length,
+    sourceCounts,
+  }
+}
+
+function mockClassificationPage(
+  status: string | null,
+  page: number,
+  limit: number,
+): ClassificationPage {
+  const filtered = status
+    ? mockClassifications.filter((item) => item.status === status)
+    : mockClassifications
+  const start = page * limit
+  return {
+    items: filtered.slice(start, start + limit),
+    stats: mockClassifyStats(),
+  }
+}
+
+function runMockClassify(useNetwork: boolean, ids?: number[]) {
+  if (mockClassifyRunning) return
+  const targets =
+    ids && ids.length > 0
+      ? mockClassifications.filter((item) => ids.includes(item.id))
+      : mockClassifications
+  const total = targets.length
+  if (total === 0) {
+    mockProgressHandler?.({
+      total: 0,
+      current: 0,
+      found: 0,
+      status: 'done',
+      message: '没有需要分类的曲目',
+    })
+    return
+  }
+
+  mockClassifyRunning = true
+  const suggestions = ['电子', '氛围', '爵士', '摇滚', '独立', '民谣', '古典', '蓝调']
+  const emit = (current: number, found: number, status: string, message: string) => {
+    mockProgressHandler?.({ total, current, found, status, message })
+  }
+  emit(0, 0, 'running', '开始分类')
+
+  let index = 0
+  let found = 0
+  const interval = window.setInterval(() => {
+    index += 1
+    const item = targets[index - 1]
+    if (item && (!item.currentGenre || !item.suggestedGenre)) {
+      const genre = suggestions[index % suggestions.length]
+      const fromNetwork = useNetwork && index % 3 === 0
+      item.suggestedGenre = genre
+      item.source = fromNetwork ? 'network' : 'local'
+      item.confidence = fromNetwork ? 0.9 : 0.82
+      item.status = 'pending'
+      found += 1
+    }
+    emit(index, found, 'running', `已完成 ${index}/${total} 首`)
+    if (index >= total) {
+      window.clearInterval(interval)
+      mockClassifyRunning = false
+      emit(total, found, 'done', `分类完成，共 ${found} 首获得流派建议`)
+    }
+  }, 140)
 }
 
 const mockTracks: Track[] = [

@@ -1,4 +1,5 @@
 mod commands;
+mod classifier;
 mod db;
 mod indexer;
 
@@ -34,6 +35,13 @@ pub fn run() {
             commands::get_track,
             commands::get_library_stats,
             commands::ensure_audio_access,
+            commands::classify_track,
+            commands::classify_all,
+            commands::classify_batch,
+            commands::list_classifications,
+            commands::get_classify_stats,
+            commands::apply_genre,
+            commands::apply_genres_batch,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application")

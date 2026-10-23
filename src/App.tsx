@@ -3,6 +3,7 @@ import { TitleBar } from './components/TitleBar'
 import { Sidebar } from './components/Sidebar'
 import { HomeView } from './components/HomeView'
 import { LibraryView } from './components/LibraryView'
+import { ClassifyView } from './components/ClassifyView'
 import { PlaceholderView } from './components/PlaceholderView'
 import { PlayerBar } from './components/PlayerBar'
 import { useUiStore } from './store/ui'
@@ -72,6 +73,8 @@ export default function App() {
             <HomeView />
           ) : nav === 'library' ? (
             <LibraryView />
+          ) : nav === 'classify' ? (
+            <ClassifyView />
           ) : (
             <PlaceholderView nav={nav} />
           )}

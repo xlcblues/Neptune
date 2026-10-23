@@ -1,5 +1,6 @@
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use serde::Serialize;
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -50,6 +51,37 @@ pub struct LibraryStats {
     pub total_duration_ms: i64,
     pub total_size_bytes: i64,
     pub last_scanned_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrackClassification {
+    pub id: i64,
+    pub title: String,
+    pub artist: String,
+    pub album: String,
+    pub current_genre: String,
+    pub suggested_genre: Option<String>,
+    pub confidence: Option<f64>,
+    pub source: Option<String>,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassifyStats {
+    pub total: i64,
+    pub classified: i64,
+    pub pending: i64,
+    pub unclassified: i64,
+    pub source_counts: HashMap<String, i64>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassificationPage {
+    pub items: Vec<TrackClassification>,
+    pub stats: ClassifyStats,
 }
 
 impl Database {
@@ -158,7 +190,7 @@ impl Database {
 
     pub fn upsert_track(&self, input: &TrackInput) -> Result<i64, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
-        conn.query_row(
+        let id = conn.query_row(
             "
             INSERT INTO tracks (
               path, title, artist, album, genre, duration_ms, bitrate,
@@ -193,7 +225,17 @@ impl Database {
                 input.size_bytes,
             ],
             |row| row.get(0),
-        )
+        )?;
+        if !input.genre.trim().is_empty() {
+            conn.execute(
+                "
+                INSERT OR IGNORE INTO track_genres (track_id, genre, confidence, source)
+                VALUES (?1, ?2, 0.95, 'metadata');
+                ",
+                params![id, input.genre.trim()],
+            )?;
+        }
+        Ok(id)
     }
 
     pub fn list_tracks(
@@ -308,6 +350,248 @@ impl Database {
         })
     }
 
+    pub fn upsert_suggestion(
+        &self,
+        track_id: i64,
+        genre: &str,
+        confidence: f64,
+        source: &str,
+    ) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "
+            INSERT INTO track_genres (track_id, genre, confidence, source)
+            VALUES (?1, ?2, ?3, ?4)
+            ON CONFLICT(track_id, genre) DO UPDATE SET
+              confidence = excluded.confidence,
+              source = excluded.source;
+            ",
+            params![track_id, genre, confidence, source],
+        )?;
+        Ok(())
+    }
+
+    pub fn apply_genre(
+        &self,
+        track_id: i64,
+        genre: &str,
+        source: &str,
+    ) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE tracks SET genre = ?1, updated_at = datetime('now') WHERE id = ?2;",
+            params![genre, track_id],
+        )?;
+        conn.execute(
+            "
+            INSERT INTO track_genres (track_id, genre, confidence, source)
+            VALUES (?1, ?2, 1.0, ?3)
+            ON CONFLICT(track_id, genre) DO UPDATE SET
+              confidence = 1.0,
+              source = excluded.source;
+            ",
+            params![track_id, genre, source],
+        )?;
+        Ok(())
+    }
+
+    pub fn apply_genres_batch(
+        &self,
+        ids: &[i64],
+        genre: &str,
+        source: &str,
+    ) -> Result<usize, rusqlite::Error> {
+        if ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.conn.lock().unwrap();
+        conn.execute("BEGIN", [])?;
+        let result = (|| {
+            for &track_id in ids {
+                conn.execute(
+                    "UPDATE tracks SET genre = ?1, updated_at = datetime('now') WHERE id = ?2;",
+                    params![genre, track_id],
+                )?;
+                conn.execute(
+                    "
+                    INSERT INTO track_genres (track_id, genre, confidence, source)
+                    VALUES (?1, ?2, 1.0, ?3)
+                    ON CONFLICT(track_id, genre) DO UPDATE SET
+                      confidence = 1.0,
+                      source = excluded.source;
+                    ",
+                    params![track_id, genre, source],
+                )?;
+            }
+            Ok(ids.len())
+        })();
+        match result {
+            Ok(applied) => {
+                conn.execute("COMMIT", [])?;
+                Ok(applied)
+            }
+            Err(err) => {
+                conn.execute("ROLLBACK", []).ok();
+                Err(err)
+            }
+        }
+    }
+
+    pub fn classification_stats(&self) -> Result<ClassifyStats, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let (total, classified, pending, unclassified) = conn.query_row(
+            "
+            SELECT
+              COUNT(*),
+              COALESCE(SUM(
+                CASE
+                  WHEN t.genre <> '' AND (
+                    (SELECT g.genre FROM track_genres g
+                     WHERE g.track_id = t.id AND g.source <> 'manual'
+                     ORDER BY g.confidence DESC, g.rowid LIMIT 1) IS NULL
+                    OR (SELECT g.genre FROM track_genres g
+                        WHERE g.track_id = t.id AND g.source <> 'manual'
+                        ORDER BY g.confidence DESC, g.rowid LIMIT 1) = t.genre
+                  ) THEN 1 ELSE 0 END
+              ), 0),
+              COALESCE(SUM(
+                CASE
+                  WHEN (SELECT g.genre FROM track_genres g
+                        WHERE g.track_id = t.id AND g.source <> 'manual'
+                        ORDER BY g.confidence DESC, g.rowid LIMIT 1) IS NOT NULL
+                    AND (SELECT g.genre FROM track_genres g
+                         WHERE g.track_id = t.id AND g.source <> 'manual'
+                         ORDER BY g.confidence DESC, g.rowid LIMIT 1) <> t.genre
+                  THEN 1 ELSE 0 END
+              ), 0),
+              COALESCE(SUM(
+                CASE
+                  WHEN t.genre = '' AND (
+                    SELECT g.genre FROM track_genres g
+                    WHERE g.track_id = t.id AND g.source <> 'manual'
+                    ORDER BY g.confidence DESC, g.rowid LIMIT 1
+                  ) IS NULL THEN 1 ELSE 0 END
+              ), 0)
+            FROM tracks t;
+            ",
+            [],
+            |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, i64>(1)?,
+                    row.get::<_, i64>(2)?,
+                    row.get::<_, i64>(3)?,
+                ))
+            },
+        )?;
+
+        let mut source_counts = HashMap::new();
+        for source in ["metadata", "local", "network", "manual"] {
+            source_counts.insert(source.to_string(), 0);
+        }
+        let mut stmt = conn.prepare(
+            "SELECT source, COUNT(*) FROM track_genres GROUP BY source;",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        for (source, count) in rows {
+            source_counts.insert(source, count);
+        }
+
+        Ok(ClassifyStats {
+            total,
+            classified,
+            pending,
+            unclassified,
+            source_counts,
+        })
+    }
+
+    pub fn list_classifications(
+        &self,
+        status: Option<&str>,
+        page: u32,
+        limit: u32,
+    ) -> Result<ClassificationPage, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let offset = page.saturating_mul(limit);
+        let filter = status.map(str::trim).filter(|s| !s.is_empty());
+        let mut sql = String::from(
+            "
+            SELECT
+              t.id, t.title, t.artist, t.album, t.genre,
+              (SELECT g.genre FROM track_genres g
+               WHERE g.track_id = t.id AND g.source <> 'manual'
+               ORDER BY g.confidence DESC, g.rowid LIMIT 1) AS suggested_genre,
+              (SELECT g.confidence FROM track_genres g
+               WHERE g.track_id = t.id AND g.source <> 'manual'
+               ORDER BY g.confidence DESC, g.rowid LIMIT 1) AS confidence,
+              (SELECT g.source FROM track_genres g
+               WHERE g.track_id = t.id AND g.source <> 'manual'
+               ORDER BY g.confidence DESC, g.rowid LIMIT 1) AS source
+            FROM tracks t
+            ",
+        );
+        if filter.is_some() {
+            sql.push_str(
+                "
+                WHERE (
+                  CASE
+                    WHEN t.genre <> '' AND (
+                      (SELECT g.genre FROM track_genres g
+                       WHERE g.track_id = t.id AND g.source <> 'manual'
+                       ORDER BY g.confidence DESC, g.rowid LIMIT 1) IS NULL
+                      OR (SELECT g.genre FROM track_genres g
+                          WHERE g.track_id = t.id AND g.source <> 'manual'
+                          ORDER BY g.confidence DESC, g.rowid LIMIT 1) = t.genre
+                    ) THEN 'classified'
+                    WHEN (SELECT g.genre FROM track_genres g
+                          WHERE g.track_id = t.id AND g.source <> 'manual'
+                          ORDER BY g.confidence DESC, g.rowid LIMIT 1) IS NOT NULL
+                      THEN 'pending'
+                    WHEN t.genre = '' THEN 'unclassified'
+                    ELSE 'classified'
+                  END
+                ) = ?1
+                ",
+            );
+        }
+        sql.push_str(
+            "
+            ORDER BY t.title COLLATE NOCASE, t.id ASC
+            LIMIT ?2 OFFSET ?3;
+            ",
+        );
+
+        let mut items = Vec::new();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = if filter.is_some() {
+            stmt.query_map(params![filter, limit, offset], Self::classification_from_row)?
+        } else {
+            stmt.query_map(params![limit, offset], Self::classification_from_row)?
+        };
+        for row in rows {
+            items.push(row?);
+        }
+        drop(stmt);
+        drop(conn);
+
+        let stats = self.classification_stats()?;
+        Ok(ClassificationPage { items, stats })
+    }
+
+    pub fn list_all_track_ids(&self) -> Result<Vec<i64>, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id FROM tracks ORDER BY id;")?;
+        let ids = stmt
+            .query_map([], |row| row.get::<_, i64>(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(ids)
+    }
+
     pub fn insert_scan_job(&self, root: &str) -> Result<i64, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
@@ -371,6 +655,35 @@ impl Database {
             size_bytes: row.get(11)?,
             added_at: row.get(12)?,
             updated_at: row.get(13)?,
+        })
+    }
+
+    fn classification_from_row(row: &Row<'_>) -> rusqlite::Result<TrackClassification> {
+        let id: i64 = row.get(0)?;
+        let title: String = row.get(1)?;
+        let artist: String = row.get(2)?;
+        let album: String = row.get(3)?;
+        let current_genre: String = row.get(4)?;
+        let suggested_genre: Option<String> = row.get(5)?;
+        let confidence: Option<f64> = row.get(6)?;
+        let source: Option<String> = row.get(7)?;
+        let status = match (current_genre.as_str(), suggested_genre.as_deref()) {
+            ("", None) => "unclassified",
+            ("", Some(_)) => "pending",
+            (_, Some(s)) if s == current_genre => "classified",
+            (_, Some(_)) => "pending",
+            (_, None) => "classified",
+        };
+        Ok(TrackClassification {
+            id,
+            title,
+            artist,
+            album,
+            current_genre,
+            suggested_genre,
+            confidence,
+            source,
+            status: status.to_string(),
         })
     }
 
