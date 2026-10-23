@@ -555,14 +555,14 @@ impl Database {
                     WHEN t.genre = '' THEN 'unclassified'
                     ELSE 'classified'
                   END
-                ) = ?1
+                ) = ?
                 ",
             );
         }
         sql.push_str(
             "
             ORDER BY t.title COLLATE NOCASE, t.id ASC
-            LIMIT ?2 OFFSET ?3;
+            LIMIT ? OFFSET ?;
             ",
         );
 
@@ -888,5 +888,38 @@ mod tests {
         }
         db.prune_scan_jobs(30).unwrap();
         assert!(db.list_roots().unwrap().is_empty());
+    }
+
+    #[test]
+    fn classifications_list_unfiltered_and_filtered() {
+        let db = temp_db();
+        db.upsert_track(&input(
+            "D:\\music\\c1.mp3",
+            "潮汐",
+            "深海电台",
+            "蓝色时刻",
+            "电子",
+            254000,
+        ))
+        .unwrap();
+        let id = db
+            .upsert_track(&input(
+                "D:\\music\\c2.mp3",
+                "夜航",
+                "Echo Parade",
+                "City Lights",
+                "",
+                221000,
+            ))
+            .unwrap();
+        db.upsert_suggestion(id, "爵士", 0.9, "local").unwrap();
+
+        let all = db.list_classifications(None, 0, 50).unwrap();
+        assert_eq!(all.items.len(), 2);
+        assert_eq!(all.stats.total, 2);
+
+        let pending = db.list_classifications(Some("pending"), 0, 50).unwrap();
+        assert_eq!(pending.items.len(), 1);
+        assert_eq!(pending.items[0].status, "pending");
     }
 }
