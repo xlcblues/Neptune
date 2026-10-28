@@ -1,13 +1,16 @@
 import { convertFileSrc, invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { open } from '@tauri-apps/plugin-dialog'
+import { open, save } from '@tauri-apps/plugin-dialog'
 import type {
   ClassificationItem,
   ClassificationPage,
   ClassifyProgress,
   ClassifyStats,
   LibraryStats,
+  Playlist,
+  PlaylistDetail,
   ScanProgress,
+  SmartPlaylistCriteria,
   Track,
 } from '../types/track'
 
@@ -18,7 +21,8 @@ export function isTauriRuntime(): boolean {
 }
 
 export function coverUrl(path: string | null | undefined): string {
-  if (!path || !isTauriRuntime()) return ''
+  if (!path) return ''
+  if (!isTauriRuntime()) return path.startsWith('data:') ? path : ''
   return convertFileSrc(path)
 }
 
@@ -27,6 +31,34 @@ export async function pickFolders(): Promise<string[]> {
   const selected = await open({ directory: true, multiple: true })
   if (!selected) return []
   return Array.isArray(selected) ? selected : [selected]
+}
+
+export async function pickImage(): Promise<string | null> {
+  if (!isTauriRuntime()) {
+    return new Promise((resolve) => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = () => {
+        const file = input.files?.[0]
+        if (!file) {
+          resolve(null)
+          return
+        }
+        const reader = new FileReader()
+        reader.onload = () =>
+          resolve(typeof reader.result === 'string' ? reader.result : null)
+        reader.onerror = () => resolve(null)
+        reader.readAsDataURL(file)
+      }
+      input.click()
+    })
+  }
+  const selected = await open({
+    multiple: false,
+    filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+  })
+  return selected ? String(selected) : null
 }
 
 export async function addFolders(paths: string[]): Promise<void> {
@@ -67,6 +99,127 @@ export async function onScanProgress(
   if (!isTauriRuntime()) return () => {}
   const unlisten = await listen<ScanProgress>('scan_progress', (event) => handler(event.payload))
   return unlisten
+}
+
+export async function listPlaylists(): Promise<Playlist[]> {
+  if (!isTauriRuntime()) return [...mockPlaylists]
+  return invoke<Playlist[]>('list_playlists')
+}
+
+export async function createPlaylist(
+  name: string,
+  description: string | null = null,
+): Promise<Playlist> {
+  if (!isTauriRuntime()) return mockCreatePlaylist(name, description)
+  return invoke<Playlist>('create_playlist', { name, description })
+}
+
+export async function updatePlaylist(
+  id: number,
+  patch: { name?: string; description?: string | null },
+): Promise<Playlist> {
+  if (!isTauriRuntime()) return mockUpdatePlaylist(id, patch)
+  return invoke<Playlist>('update_playlist', {
+    id,
+    name: patch.name ?? null,
+    description: patch.description === undefined ? null : patch.description ?? '',
+  })
+}
+
+export async function updatePlaylistCover(
+  id: number,
+  coverPath: string | null,
+): Promise<Playlist> {
+  if (!isTauriRuntime()) return mockUpdatePlaylistCover(id, coverPath)
+  return invoke<Playlist>('update_playlist_cover', { id, coverPath })
+}
+
+export async function deletePlaylist(id: number): Promise<void> {
+  if (!isTauriRuntime()) {
+    mockDeletePlaylist(id)
+    return
+  }
+  await invoke('delete_playlist', { id })
+}
+
+export async function getPlaylistDetail(id: number): Promise<PlaylistDetail | null> {
+  if (!isTauriRuntime()) return mockGetPlaylistDetail(id)
+  return invoke<PlaylistDetail | null>('get_playlist_detail', { id })
+}
+
+export async function addTracksToPlaylist(id: number, trackIds: number[]): Promise<number> {
+  if (!isTauriRuntime()) return mockAddTracksToPlaylist(id, trackIds)
+  return invoke<number>('add_tracks_to_playlist', { id, trackIds })
+}
+
+export async function removeTracksFromPlaylist(id: number, trackIds: number[]): Promise<number> {
+  if (!isTauriRuntime()) return mockRemoveTracksFromPlaylist(id, trackIds)
+  return invoke<number>('remove_tracks_from_playlist', { id, trackIds })
+}
+
+export async function reorderPlaylist(id: number, orderedIds: number[]): Promise<void> {
+  if (!isTauriRuntime()) {
+    mockReorderPlaylist(id, orderedIds)
+    return
+  }
+  await invoke('reorder_playlist', { id, orderedIds })
+}
+
+export async function previewSmartPlaylist(
+  criteria: SmartPlaylistCriteria,
+): Promise<Track[]> {
+  if (!isTauriRuntime()) return mockSmartPlaylistTracks(criteria)
+  return invoke<Track[]>('preview_smart_playlist', {
+    genre: criteria.genre || null,
+    yearStart: criteria.yearStart,
+    yearEnd: criteria.yearEnd,
+    minDurationMs: criteria.minDurationMs,
+    maxDurationMs: criteria.maxDurationMs,
+  })
+}
+
+export async function createSmartPlaylist(
+  name: string,
+  description: string | null,
+  criteria: SmartPlaylistCriteria,
+): Promise<PlaylistDetail> {
+  if (!isTauriRuntime()) return mockCreateSmartPlaylist(name, description, criteria)
+  return invoke<PlaylistDetail>('create_smart_playlist', {
+    name,
+    description,
+    genre: criteria.genre || null,
+    yearStart: criteria.yearStart,
+    yearEnd: criteria.yearEnd,
+    minDurationMs: criteria.minDurationMs,
+    maxDurationMs: criteria.maxDurationMs,
+  })
+}
+
+export async function updateTrackMetadata(
+  id: number,
+  patch: { title: string; artist: string; album: string; genre: string },
+): Promise<void> {
+  if (!isTauriRuntime()) {
+    const track = mockTracks.find((entry) => entry.id === id)
+    if (track) {
+      track.title = patch.title
+      track.artist = patch.artist
+      track.album = patch.album
+      track.genre = patch.genre
+      track.updatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ')
+    }
+    return
+  }
+  await invoke('update_track_metadata', { id, ...patch })
+}
+
+export async function setTrackCover(id: number, coverPath: string | null): Promise<void> {
+  if (!isTauriRuntime()) {
+    const track = mockTracks.find((entry) => entry.id === id)
+    if (track) track.coverPath = coverPath
+    return
+  }
+  await invoke('set_track_cover', { id, coverPath })
 }
 
 export async function listClassifications(
@@ -363,6 +516,7 @@ const mockTracks: Track[] = [
     sizeBytes: 28160512,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2024,
   },
   {
     id: 2,
@@ -379,6 +533,7 @@ const mockTracks: Track[] = [
     sizeBytes: 8847360,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2022,
   },
   {
     id: 3,
@@ -395,6 +550,7 @@ const mockTracks: Track[] = [
     sizeBytes: 46137344,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2019,
   },
   {
     id: 4,
@@ -411,6 +567,7 @@ const mockTracks: Track[] = [
     sizeBytes: 10158080,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2021,
   },
   {
     id: 5,
@@ -427,6 +584,7 @@ const mockTracks: Track[] = [
     sizeBytes: 6860800,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2023,
   },
   {
     id: 6,
@@ -443,6 +601,7 @@ const mockTracks: Track[] = [
     sizeBytes: 9830400,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2018,
   },
   {
     id: 7,
@@ -459,6 +618,7 @@ const mockTracks: Track[] = [
     sizeBytes: 7925760,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2025,
   },
   {
     id: 8,
@@ -475,6 +635,7 @@ const mockTracks: Track[] = [
     sizeBytes: 7456000,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2020,
   },
   {
     id: 9,
@@ -491,6 +652,7 @@ const mockTracks: Track[] = [
     sizeBytes: 14880000,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2024,
   },
   {
     id: 10,
@@ -507,6 +669,7 @@ const mockTracks: Track[] = [
     sizeBytes: 10680000,
     addedAt: '2026-10-21 18:02:11',
     updatedAt: '2026-10-21 18:02:11',
+    year: 2022,
   },
 ]
 
@@ -516,6 +679,182 @@ const mockStats: LibraryStats = {
   totalDurationMs: mockTracks.reduce((sum, track) => sum + track.durationMs, 0),
   totalSizeBytes: mockTracks.reduce((sum, track) => sum + track.sizeBytes, 0),
   lastScannedAt: '2026-10-21 18:02:11',
+}
+
+const mockPlaylists: Playlist[] = [
+  {
+    id: 1,
+    name: '深夜通勤',
+    description: '夜路、车窗与城市的低语',
+    coverPath: null,
+    createdAt: '2026-10-21 18:02:11',
+    updatedAt: '2026-10-21 18:02:11',
+    isSmart: false,
+    trackCount: 6,
+    totalDurationMs: 1516000,
+  },
+  {
+    id: 2,
+    name: '周末阅读',
+    description: '安静翻阅时的背景音乐',
+    coverPath: null,
+    createdAt: '2026-10-21 18:02:11',
+    updatedAt: '2026-10-21 18:02:11',
+    isSmart: false,
+    trackCount: 4,
+    totalDurationMs: 1188000,
+  },
+  {
+    id: 3,
+    name: '我的收藏',
+    description: null,
+    coverPath: null,
+    createdAt: '2026-10-21 18:02:11',
+    updatedAt: '2026-10-21 18:02:11',
+    isSmart: false,
+    trackCount: 5,
+    totalDurationMs: 1252000,
+  },
+]
+
+const mockPlaylistTrackIds: Record<number, number[]> = {
+  1: [1, 2, 3, 4, 5, 6],
+  2: [3, 4, 9, 10],
+  3: [1, 2, 4, 7, 9],
+}
+
+let mockPlaylistSeq = 3
+
+function nowStamp(): string {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ')
+}
+
+function syncMockPlaylistCounts(): void {
+  for (const playlist of mockPlaylists) {
+    const ids = mockPlaylistTrackIds[playlist.id] ?? []
+    playlist.trackCount = ids.length
+    playlist.totalDurationMs = ids.reduce(
+      (sum, trackId) => sum + (mockTracks.find((track) => track.id === trackId)?.durationMs ?? 0),
+      0,
+    )
+  }
+}
+
+function mockPlaylistById(id: number): Playlist | undefined {
+  return mockPlaylists.find((playlist) => playlist.id === id)
+}
+
+function mockCreatePlaylist(name: string, description: string | null): Playlist {
+  const now = nowStamp()
+  const playlist: Playlist = {
+    id: ++mockPlaylistSeq,
+    name: name || '新歌单',
+    description,
+    coverPath: null,
+    createdAt: now,
+    updatedAt: now,
+    isSmart: false,
+    trackCount: 0,
+    totalDurationMs: 0,
+  }
+  mockPlaylists.unshift(playlist)
+  mockPlaylistTrackIds[playlist.id] = []
+  return playlist
+}
+
+function mockUpdatePlaylist(
+  id: number,
+  patch: { name?: string; description?: string | null },
+): Playlist {
+  const playlist = mockPlaylistById(id)
+  if (!playlist) throw new Error('歌单不存在')
+  if (patch.name !== undefined) playlist.name = patch.name
+  if (patch.description !== undefined) playlist.description = patch.description
+  playlist.updatedAt = nowStamp()
+  return playlist
+}
+
+function mockUpdatePlaylistCover(id: number, coverPath: string | null): Playlist {
+  const playlist = mockPlaylistById(id)
+  if (!playlist) throw new Error('歌单不存在')
+  playlist.coverPath = coverPath
+  playlist.updatedAt = nowStamp()
+  return playlist
+}
+
+function mockDeletePlaylist(id: number): void {
+  const index = mockPlaylists.findIndex((playlist) => playlist.id === id)
+  if (index >= 0) mockPlaylists.splice(index, 1)
+  delete mockPlaylistTrackIds[id]
+}
+
+function mockGetPlaylistDetail(id: number): PlaylistDetail | null {
+  const playlist = mockPlaylistById(id)
+  if (!playlist) return null
+  const ids = mockPlaylistTrackIds[id] ?? []
+  return {
+    playlist: { ...playlist },
+    tracks: ids
+      .map((trackId) => mockTracks.find((track) => track.id === trackId))
+      .filter((track): track is Track => Boolean(track)),
+  }
+}
+
+function mockAddTracksToPlaylist(id: number, trackIds: number[]): number {
+  const existing = mockPlaylistTrackIds[id] ?? []
+  const added = trackIds.filter((trackId) => !existing.includes(trackId))
+  mockPlaylistTrackIds[id] = [...existing, ...added]
+  const playlist = mockPlaylistById(id)
+  if (playlist) playlist.updatedAt = nowStamp()
+  syncMockPlaylistCounts()
+  return added.length
+}
+
+function mockRemoveTracksFromPlaylist(id: number, trackIds: number[]): number {
+  const existing = mockPlaylistTrackIds[id] ?? []
+  const next = existing.filter((trackId) => !trackIds.includes(trackId))
+  const removed = existing.length - next.length
+  mockPlaylistTrackIds[id] = next
+  const playlist = mockPlaylistById(id)
+  if (playlist) playlist.updatedAt = nowStamp()
+  syncMockPlaylistCounts()
+  return removed
+}
+
+function mockReorderPlaylist(id: number, orderedIds: number[]): void {
+  const existing = mockPlaylistTrackIds[id] ?? []
+  const next = [...orderedIds]
+  for (const trackId of existing) {
+    if (!next.includes(trackId)) next.push(trackId)
+  }
+  mockPlaylistTrackIds[id] = next
+  const playlist = mockPlaylistById(id)
+  if (playlist) playlist.updatedAt = nowStamp()
+}
+
+function mockSmartPlaylistTracks(criteria: SmartPlaylistCriteria): Track[] {
+  const genre = criteria.genre.trim().toLowerCase()
+  return mockTracks.filter((track) => {
+    if (genre && !track.genre.toLowerCase().includes(genre)) return false
+    if (criteria.yearStart !== null && (track.year ?? 0) < criteria.yearStart) return false
+    if (criteria.yearEnd !== null && (track.year ?? 0) > criteria.yearEnd) return false
+    if (criteria.minDurationMs !== null && track.durationMs < criteria.minDurationMs) return false
+    if (criteria.maxDurationMs !== null && track.durationMs > criteria.maxDurationMs) return false
+    return true
+  })
+}
+
+function mockCreateSmartPlaylist(
+  name: string,
+  description: string | null,
+  criteria: SmartPlaylistCriteria,
+): PlaylistDetail {
+  const playlist = mockCreatePlaylist(name, description)
+  playlist.isSmart = true
+  const tracks = mockSmartPlaylistTracks(criteria)
+  mockPlaylistTrackIds[playlist.id] = tracks.map((track) => track.id)
+  syncMockPlaylistCounts()
+  return { playlist: { ...playlist }, tracks }
 }
 
 function filterMockTracks(options: ListTracksOptions): Track[] {
@@ -546,4 +885,36 @@ function filterMockTracks(options: ListTracksOptions): Track[] {
   const page = options.page ?? 0
   const limit = options.limit ?? 2000
   return result.slice(page * limit, (page + 1) * limit)
+}
+
+export async function exportPlaylistM3U(
+  name: string,
+  tracks: Track[],
+): Promise<string | null> {
+  const content = [
+    '#EXTM3U',
+    ...tracks.map(
+      (track) =>
+        `#EXTINF:${Math.round(track.durationMs / 1000)},${track.artist || '未知艺人'} - ${track.title}\n${track.path}`,
+    ),
+  ].join('\n')
+
+  if (!isTauriRuntime()) {
+    const blob = new Blob([content], { type: 'audio/x-mpegurl' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${name}.m3u`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    return `${name}.m3u`
+  }
+
+  const filePath = await save({
+    defaultPath: `${name}.m3u`,
+    filters: [{ name: '播放列表', extensions: ['m3u', 'm3u8'] }],
+  })
+  if (!filePath) return null
+  await invoke('export_m3u', { filePath, content })
+  return filePath
 }

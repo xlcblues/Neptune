@@ -178,7 +178,7 @@ fn is_audio_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn parse_track(path: &Path, app_dir: &Path) -> Option<TrackInput> {
+pub(crate) fn parse_track(path: &Path, app_dir: &Path) -> Option<TrackInput> {
     let size_bytes = std::fs::metadata(path).ok()?.len() as i64;
     let tagged = read_from_path(path).ok()?;
     let props = tagged.properties();
@@ -210,6 +210,7 @@ fn parse_track(path: &Path, app_dir: &Path) -> Option<TrackInput> {
         artist,
         album,
         genre,
+        year: tag.and_then(|tag| tag.year()).map(|year| year as i64),
         duration_ms: props.duration().as_millis() as i64,
         bitrate: props.audio_bitrate().map(|value| value as i64),
         sample_rate: props.sample_rate().map(|value| value as i64),

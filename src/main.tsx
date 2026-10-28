@@ -8,6 +8,7 @@ import './styles/app.css'
 import './styles/library.css'
 import './styles/player.css'
 import './styles/classify.css'
+import './styles/playlist.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

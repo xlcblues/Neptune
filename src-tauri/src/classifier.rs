@@ -405,6 +405,7 @@ mod tests {
             channels: Some(2),
             cover_path: None,
             size_bytes: 1024 * 1024,
+            year: None,
         }
     }
 

@@ -1,4 +1,4 @@
-import { LibraryBig, Sparkles, AudioWaveform } from 'lucide-react'
+import { AudioWaveform, LibraryBig, ListMusic, Sparkles } from 'lucide-react'
 import type { NavKey } from '../store/ui'
 import { GlassCard } from './ui/GlassCard'
 import { Tag } from './ui/Tag'
@@ -15,6 +15,12 @@ const content: Record<Exclude<NavKey, 'home'>, { title: string; milestone: strin
     milestone: 'M3 · 多级降级',
     desc: '从本地标签到指纹识别、联网元数据与本地 AI 的分类管线将在 M3 开放。',
     icon: Sparkles,
+  },
+  playlist: {
+    title: '我的歌单',
+    milestone: 'M4 · 歌单管理',
+    desc: '创建普通与智能歌单，添加、拖拽排序、导出 M3U，并随时编辑曲目与封面。',
+    icon: ListMusic,
   },
   visual: {
     title: '播放特效',

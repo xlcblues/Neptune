@@ -26,6 +26,7 @@ pub struct Track {
     pub size_bytes: i64,
     pub added_at: String,
     pub updated_at: String,
+    pub year: Option<i64>,
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +42,7 @@ pub struct TrackInput {
     pub channels: Option<i64>,
     pub cover_path: Option<String>,
     pub size_bytes: i64,
+    pub year: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -84,6 +86,27 @@ pub struct ClassificationPage {
     pub stats: ClassifyStats,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Playlist {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub cover_path: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+    pub is_smart: bool,
+    pub track_count: i64,
+    pub total_duration_ms: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistDetail {
+    pub playlist: Playlist,
+    pub tracks: Vec<Track>,
+}
+
 impl Database {
     pub fn open(dir: &Path) -> Result<Self, Box<dyn std::error::Error>> {
         std::fs::create_dir_all(dir)?;
@@ -111,6 +134,7 @@ impl Database {
               artist TEXT NOT NULL DEFAULT '',
               album TEXT NOT NULL DEFAULT '',
               genre TEXT NOT NULL DEFAULT '',
+              year INTEGER,
               duration_ms INTEGER NOT NULL DEFAULT 0,
               bitrate INTEGER,
               sample_rate INTEGER,
@@ -185,6 +209,24 @@ impl Database {
             );
             ",
         )?;
+
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(tracks)")?
+            .query_map([], |row| row.get::<_, String>(1))?
+            .collect::<Result<_, _>>()?;
+        if !columns.iter().any(|column| column == "year") {
+            conn.execute("ALTER TABLE tracks ADD COLUMN year INTEGER;", [])?;
+        }
+        let playlist_columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(playlists)")?
+            .query_map([], |row| row.get::<_, String>(1))?
+            .collect::<Result<_, _>>()?;
+        if !playlist_columns.iter().any(|column| column == "is_smart") {
+            conn.execute(
+                "ALTER TABLE playlists ADD COLUMN is_smart INTEGER NOT NULL DEFAULT 0;",
+                [],
+            )?;
+        }
         Ok(())
     }
 
@@ -194,9 +236,9 @@ impl Database {
             "
             INSERT INTO tracks (
               path, title, artist, album, genre, duration_ms, bitrate,
-              sample_rate, channels, cover_path, size_bytes, updated_at
+              sample_rate, channels, cover_path, size_bytes, year, updated_at
             )
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, datetime('now'))
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, datetime('now'))
             ON CONFLICT(path) DO UPDATE SET
               title=excluded.title,
               artist=excluded.artist,
@@ -208,6 +250,7 @@ impl Database {
               channels=excluded.channels,
               cover_path=excluded.cover_path,
               size_bytes=excluded.size_bytes,
+              year=excluded.year,
               updated_at=datetime('now')
             RETURNING id;
             ",
@@ -223,6 +266,7 @@ impl Database {
                 input.channels,
                 input.cover_path,
                 input.size_bytes,
+                input.year,
             ],
             |row| row.get(0),
         )?;
@@ -257,7 +301,7 @@ impl Database {
                     "
                     SELECT id, path, title, artist, album, genre, duration_ms,
                            bitrate, sample_rate, channels, cover_path,
-                           size_bytes, added_at, updated_at
+                           size_bytes, added_at, updated_at, year
                     FROM tracks
                     WHERE id IN (SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1)
                     {order}
@@ -277,7 +321,7 @@ impl Database {
                     "
                     SELECT id, path, title, artist, album, genre, duration_ms,
                            bitrate, sample_rate, channels, cover_path,
-                           size_bytes, added_at, updated_at
+                           size_bytes, added_at, updated_at, year
                     FROM tracks
                     WHERE title LIKE ?1 ESCAPE '\\'
                        OR artist LIKE ?1 ESCAPE '\\'
@@ -294,7 +338,7 @@ impl Database {
                     "
                     SELECT id, path, title, artist, album, genre, duration_ms,
                            bitrate, sample_rate, channels, cover_path,
-                           size_bytes, added_at, updated_at
+                           size_bytes, added_at, updated_at, year
                     FROM tracks
                     {order}
                     LIMIT ?1 OFFSET ?2;
@@ -313,7 +357,7 @@ impl Database {
             "
             SELECT id, path, title, artist, album, genre, duration_ms,
                    bitrate, sample_rate, channels, cover_path,
-                   size_bytes, added_at, updated_at
+                   size_bytes, added_at, updated_at, year
             FROM tracks WHERE id = ?1;
             ",
             params![id],
@@ -629,6 +673,345 @@ impl Database {
         Ok(roots)
     }
 
+    pub fn create_playlist(&self, name: &str, description: Option<&str>) -> Result<Playlist, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO playlists (name, description) VALUES (?1, ?2);",
+            params![name, description],
+        )?;
+        let id = conn.last_insert_rowid();
+        Self::playlist_by_id(&conn, id)
+    }
+
+    pub fn update_playlist(
+        &self,
+        id: i64,
+        name: Option<&str>,
+        description: Option<&str>,
+    ) -> Result<Playlist, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        if let Some(name) = name {
+            conn.execute(
+                "UPDATE playlists SET name = ?1, updated_at = datetime('now') WHERE id = ?2;",
+                params![name, id],
+            )?;
+        }
+        if let Some(description) = description {
+            conn.execute(
+                "UPDATE playlists SET description = ?1, updated_at = datetime('now') WHERE id = ?2;",
+                params![description, id],
+            )?;
+        }
+        Self::playlist_by_id(&conn, id)
+    }
+
+    pub fn update_playlist_cover(
+        &self,
+        id: i64,
+        cover_path: Option<&str>,
+    ) -> Result<Playlist, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let cover_path = cover_path.filter(|value| !value.is_empty());
+        conn.execute(
+            "
+            UPDATE playlists
+            SET cover_path = ?1, updated_at = datetime('now')
+            WHERE id = ?2;
+            ",
+            params![cover_path, id],
+        )?;
+        Self::playlist_by_id(&conn, id)
+    }
+
+    pub fn delete_playlist(&self, id: i64) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM playlists WHERE id = ?1;", params![id])?;
+        Ok(())
+    }
+
+    pub fn list_playlists(&self) -> Result<Vec<Playlist>, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "
+            SELECT p.id, p.name, p.description, p.cover_path, p.created_at, p.updated_at,
+                   p.is_smart,
+                   COUNT(pt.track_id), COALESCE(SUM(t.duration_ms), 0)
+            FROM playlists p
+            LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
+            LEFT JOIN tracks t ON t.id = pt.track_id
+            GROUP BY p.id
+            ORDER BY p.updated_at DESC, p.id DESC;
+            ",
+        )?;
+        let playlists = stmt
+            .query_map([], Self::playlist_from_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(playlists)
+    }
+
+    pub fn get_playlist_detail(&self, id: i64) -> Result<Option<PlaylistDetail>, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let playlist = Self::playlist_by_id(&conn, id).optional()?;
+        let Some(playlist) = playlist else {
+            return Ok(None);
+        };
+        let mut stmt = conn.prepare(
+            "
+            SELECT t.id, t.path, t.title, t.artist, t.album, t.genre, t.duration_ms,
+                   t.bitrate, t.sample_rate, t.channels, t.cover_path,
+                   t.size_bytes, t.added_at, t.updated_at, t.year
+            FROM tracks t
+            JOIN playlist_tracks pt ON pt.track_id = t.id
+            WHERE pt.playlist_id = ?1
+            ORDER BY pt.position ASC, pt.rowid ASC;
+            ",
+        )?;
+        let tracks = stmt
+            .query_map(params![id], Self::track_from_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Some(PlaylistDetail { playlist, tracks }))
+    }
+
+    pub fn add_tracks_to_playlist(
+        &self,
+        id: i64,
+        track_ids: &[i64],
+    ) -> Result<usize, rusqlite::Error> {
+        if track_ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.conn.lock().unwrap();
+        conn.execute("BEGIN", [])?;
+        let result = (|| {
+            let mut added = 0;
+            for &track_id in track_ids {
+                added += conn.execute(
+                    "
+                    INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position)
+                    SELECT ?1, ?2,
+                           COALESCE((SELECT MAX(position) FROM playlist_tracks WHERE playlist_id = ?1), -1) + 1
+                    WHERE EXISTS (SELECT 1 FROM tracks WHERE id = ?2);
+                    ",
+                    params![id, track_id],
+                )?;
+            }
+            conn.execute(
+                "UPDATE playlists SET updated_at = datetime('now') WHERE id = ?1;",
+                params![id],
+            )?;
+            Ok(added)
+        })();
+        match result {
+            Ok(added) => {
+                conn.execute("COMMIT", [])?;
+                Ok(added)
+            }
+            Err(err) => {
+                conn.execute("ROLLBACK", []).ok();
+                Err(err)
+            }
+        }
+    }
+
+    pub fn remove_tracks_from_playlist(
+        &self,
+        id: i64,
+        track_ids: &[i64],
+    ) -> Result<usize, rusqlite::Error> {
+        if track_ids.is_empty() {
+            return Ok(0);
+        }
+        let conn = self.conn.lock().unwrap();
+        conn.execute("BEGIN", [])?;
+        let result = (|| {
+            let mut removed = 0;
+            for &track_id in track_ids {
+                removed += conn.execute(
+                    "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND track_id = ?2;",
+                    params![id, track_id],
+                )?;
+            }
+            let remaining: Vec<i64> = conn
+                .prepare(
+                    "
+                    SELECT track_id FROM playlist_tracks
+                    WHERE playlist_id = ?1
+                    ORDER BY position ASC, rowid ASC;
+                    ",
+                )?
+                .query_map(params![id], |row| row.get::<_, i64>(0))?
+                .collect::<Result<_, _>>()?;
+            for (index, track_id) in remaining.iter().enumerate() {
+                conn.execute(
+                    "UPDATE playlist_tracks SET position = ?1 WHERE playlist_id = ?2 AND track_id = ?3;",
+                    params![index as i64, id, track_id],
+                )?;
+            }
+            conn.execute(
+                "UPDATE playlists SET updated_at = datetime('now') WHERE id = ?1;",
+                params![id],
+            )?;
+            Ok(removed)
+        })();
+        match result {
+            Ok(removed) => {
+                conn.execute("COMMIT", [])?;
+                Ok(removed)
+            }
+            Err(err) => {
+                conn.execute("ROLLBACK", []).ok();
+                Err(err)
+            }
+        }
+    }
+
+    pub fn reorder_playlist(&self, id: i64, ordered_ids: &[i64]) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("BEGIN", [])?;
+        let result = (|| {
+            let existing: Vec<i64> = conn
+                .prepare("SELECT track_id FROM playlist_tracks WHERE playlist_id = ?1;")?
+                .query_map(params![id], |row| row.get::<_, i64>(0))?
+                .collect::<Result<_, _>>()?;
+            let mut ordered = ordered_ids.to_vec();
+            for track_id in existing {
+                if !ordered.iter().any(|id| *id == track_id) {
+                    ordered.push(track_id);
+                }
+            }
+            for (index, track_id) in ordered.iter().enumerate() {
+                conn.execute(
+                    "UPDATE playlist_tracks SET position = ?1 WHERE playlist_id = ?2 AND track_id = ?3;",
+                    params![index as i64, id, track_id],
+                )?;
+            }
+            conn.execute(
+                "UPDATE playlists SET updated_at = datetime('now') WHERE id = ?1;",
+                params![id],
+            )?;
+            Ok(())
+        })();
+        match result {
+            Ok(()) => {
+                conn.execute("COMMIT", [])?;
+                Ok(())
+            }
+            Err(err) => {
+                conn.execute("ROLLBACK", []).ok();
+                Err(err)
+            }
+        }
+    }
+
+    pub fn smart_playlist_tracks(
+        &self,
+        genre: Option<&str>,
+        year_start: Option<i64>,
+        year_end: Option<i64>,
+        min_duration_ms: Option<i64>,
+        max_duration_ms: Option<i64>,
+    ) -> Result<Vec<Track>, rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "
+            SELECT id, path, title, artist, album, genre, duration_ms,
+                   bitrate, sample_rate, channels, cover_path,
+                   size_bytes, added_at, updated_at, year
+            FROM tracks
+            WHERE (?1 IS NULL OR instr(lower(genre), lower(?1)) > 0)
+              AND (?2 IS NULL OR year >= ?2)
+              AND (?3 IS NULL OR year <= ?3)
+              AND (?4 IS NULL OR duration_ms >= ?4)
+              AND (?5 IS NULL OR duration_ms <= ?5)
+            ORDER BY title COLLATE NOCASE, id ASC
+            LIMIT 5000;
+            ",
+        )?;
+        let tracks = stmt
+            .query_map(
+                params![genre, year_start, year_end, min_duration_ms, max_duration_ms],
+                Self::track_from_row,
+            )?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(tracks)
+    }
+
+    pub fn create_smart_playlist(
+        &self,
+        name: &str,
+        description: Option<&str>,
+        genre: Option<&str>,
+        year_start: Option<i64>,
+        year_end: Option<i64>,
+        min_duration_ms: Option<i64>,
+        max_duration_ms: Option<i64>,
+    ) -> Result<PlaylistDetail, rusqlite::Error> {
+        let playlist = self.create_playlist(name, description)?;
+        {
+            let conn = self.conn.lock().unwrap();
+            conn.execute(
+                "UPDATE playlists SET is_smart = 1 WHERE id = ?1;",
+                params![playlist.id],
+            )?;
+        }
+        let tracks = self.smart_playlist_tracks(
+            genre,
+            year_start,
+            year_end,
+            min_duration_ms,
+            max_duration_ms,
+        )?;
+        let ids: Vec<i64> = tracks.iter().map(|track| track.id).collect();
+        self.add_tracks_to_playlist(playlist.id, &ids)?;
+        let detail = self.get_playlist_detail(playlist.id)?.ok_or_else(|| {
+            rusqlite::Error::QueryReturnedNoRows
+        })?;
+        Ok(detail)
+    }
+
+    pub fn update_track_metadata(
+        &self,
+        id: i64,
+        title: &str,
+        artist: &str,
+        album: &str,
+        genre: &str,
+    ) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "
+            UPDATE tracks
+            SET title = ?1, artist = ?2, album = ?3, genre = ?4,
+                updated_at = datetime('now')
+            WHERE id = ?5;
+            ",
+            params![title, artist, album, genre, id],
+        )?;
+        if !genre.trim().is_empty() {
+            conn.execute(
+                "
+                INSERT OR IGNORE INTO track_genres (track_id, genre, confidence, source)
+                VALUES (?1, ?2, 0.95, 'metadata');
+                ",
+                params![id, genre.trim()],
+            )?;
+        }
+        Ok(())
+    }
+
+    pub fn set_track_cover(&self, id: i64, cover_path: Option<&str>) -> Result<(), rusqlite::Error> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "
+            UPDATE tracks
+            SET cover_path = ?1, updated_at = datetime('now')
+            WHERE id = ?2;
+            ",
+            params![cover_path, id],
+        )?;
+        Ok(())
+    }
+
     #[allow(dead_code)]
     pub fn prune_scan_jobs(&self, max_age_days: i64) -> Result<(), rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
@@ -655,6 +1038,38 @@ impl Database {
             size_bytes: row.get(11)?,
             added_at: row.get(12)?,
             updated_at: row.get(13)?,
+            year: row.get(14)?,
+        })
+    }
+
+    fn playlist_by_id(conn: &Connection, id: i64) -> Result<Playlist, rusqlite::Error> {
+        conn.query_row(
+            "
+            SELECT p.id, p.name, p.description, p.cover_path, p.created_at, p.updated_at,
+                   p.is_smart,
+                   COUNT(pt.track_id), COALESCE(SUM(t.duration_ms), 0)
+            FROM playlists p
+            LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
+            LEFT JOIN tracks t ON t.id = pt.track_id
+            WHERE p.id = ?1
+            GROUP BY p.id;
+            ",
+            params![id],
+            Self::playlist_from_row,
+        )
+    }
+
+    fn playlist_from_row(row: &Row<'_>) -> rusqlite::Result<Playlist> {
+        Ok(Playlist {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            description: row.get(2)?,
+            cover_path: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+            is_smart: row.get(6)?,
+            track_count: row.get(7)?,
+            total_duration_ms: row.get(8)?,
         })
     }
 
@@ -738,6 +1153,7 @@ mod tests {
             channels: Some(2),
             cover_path: None,
             size_bytes: 1024 * 1024,
+            year: None,
         }
     }
 

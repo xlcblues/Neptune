@@ -42,6 +42,20 @@ pub fn run() {
             commands::get_classify_stats,
             commands::apply_genre,
             commands::apply_genres_batch,
+            commands::create_playlist,
+            commands::update_playlist,
+            commands::update_playlist_cover,
+            commands::delete_playlist,
+            commands::list_playlists,
+            commands::get_playlist_detail,
+            commands::add_tracks_to_playlist,
+            commands::remove_tracks_from_playlist,
+            commands::reorder_playlist,
+            commands::create_smart_playlist,
+            commands::preview_smart_playlist,
+            commands::update_track_metadata,
+            commands::set_track_cover,
+            commands::export_m3u,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application")

@@ -1,9 +1,13 @@
-import { AudioWaveform, HardDrive, Heart, Home, LibraryBig, Monitor, Moon, Plus, Sparkles, Sun } from 'lucide-react'
+import { useState } from 'react'
+import { AudioWaveform, HardDrive, Home, LibraryBig, Monitor, Moon, Plus, Sparkles, Sun, Trash2 } from 'lucide-react'
 import { useUiStore } from '../store/ui'
 import { useLibraryStore } from '../store/library'
+import { usePlaylistStore } from '../store/playlist'
 import { useTheme, type ThemePreference } from '../theme'
 import type { NavKey } from '../store/ui'
 import { IconButton } from './ui/IconButton'
+import { coverUrl } from '../lib/tauri'
+import { trackCoverStyle } from '../lib/cover'
 
 const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'system', label: '跟随系统', icon: Monitor },
@@ -18,22 +22,41 @@ const navItems: { key: NavKey; label: string; icon: typeof Home }[] = [
   { key: 'visual', label: '播放特效', icon: AudioWaveform },
 ]
 
-const playlists = [
-  { name: '深夜通勤', count: '128 首', color: 'linear-gradient(135deg,#4D8DFF,#2B5BE8)' },
-  { name: '周末阅读', count: '46 首', color: 'linear-gradient(135deg,#2FE0C8,#1E8E88)' },
-  { name: '运动节奏', count: '89 首', color: 'linear-gradient(135deg,#FF7D6B,#FFB36B)' },
-  { name: '我的收藏', count: '215 首', color: 'linear-gradient(135deg,#D8C4FF,#8A6CFF)', heart: true },
-]
-
 export function Sidebar() {
   const nav = useUiStore((s) => s.nav)
   const setNav = useUiStore((s) => s.setNav)
+  const activePlaylistId = useUiStore((s) => s.activePlaylistId)
+  const openPlaylist = useUiStore((s) => s.openPlaylist)
+  const clearActivePlaylist = useUiStore((s) => s.clearActivePlaylist)
   const { preference, setPreference } = useTheme()
   const stats = useLibraryStore((s) => s.stats)
   const scanning = useLibraryStore((s) => s.scanning)
   const scanProgress = useLibraryStore((s) => s.scanProgress)
+  const playlists = usePlaylistStore((s) => s.playlists)
+  const createPlaylist = usePlaylistStore((s) => s.create)
+  const removePlaylist = usePlaylistStore((s) => s.remove)
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
   const trackCount = stats?.trackCount ?? 0
   const folderCount = stats?.folderCount ?? 0
+
+  const handleCreate = async () => {
+    const playlist = await createPlaylist(newName.trim() || '新歌单')
+    if (playlist) {
+      openPlaylist(playlist.id)
+      setNewName('')
+    }
+    setCreating(false)
+  }
+
+  const handleDelete = async (id: number, name: string) => {
+    if (!window.confirm(`删除歌单“${name}”？`)) return
+    await removePlaylist(id)
+    if (activePlaylistId === id) {
+      clearActivePlaylist()
+      setNav('home')
+    }
+  }
 
   const progressPercent =
     scanning && scanProgress && scanProgress.total > 0
@@ -73,22 +96,72 @@ export function Sidebar() {
 
       <div className="playlist-head">
         <span className="nav-label">我的歌单</span>
-        <IconButton title="新建歌单" aria-label="新建歌单">
+        <IconButton
+          title="新建歌单"
+          aria-label="新建歌单"
+          onClick={() => setCreating(true)}
+        >
           <Plus size={16} />
         </IconButton>
       </div>
 
-      {playlists.map((pl) => (
-        <div key={pl.name} className="playlist-item">
-          <div className="pl-cover" style={{ background: pl.color }}>
-            {pl.heart ? <Heart size={13} /> : <AudioWaveform size={13} />}
-          </div>
-          <div className="pl-meta">
-            <b>{pl.name}</b>
-            <span>{pl.count}</span>
-          </div>
+      {creating ? (
+        <div className="playlist-create">
+          <input
+            value={newName}
+            onChange={(event) => setNewName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void handleCreate()
+              if (event.key === 'Escape') setCreating(false)
+            }}
+            placeholder="歌单名称"
+            autoFocus
+          />
+          <button onClick={() => void handleCreate()}>创建</button>
         </div>
-      ))}
+      ) : null}
+
+      {playlists.length === 0 ? (
+        <div className="playlist-empty">暂无歌单</div>
+      ) : (
+        playlists.map((playlist) => {
+          const url = coverUrl(playlist.coverPath)
+          const active = nav === 'playlist' && activePlaylistId === playlist.id
+          return (
+            <div
+              key={playlist.id}
+              className={`playlist-item ${active ? 'active' : ''}`}
+              onClick={() => openPlaylist(playlist.id)}
+            >
+              <div className="pl-cover" style={trackCoverStyle(playlist.name)}>
+                {url ? (
+                  <img src={url} alt="" />
+                ) : playlist.isSmart ? (
+                  <Sparkles size={13} />
+                ) : (
+                  <AudioWaveform size={13} />
+                )}
+              </div>
+              <div className="pl-meta">
+                <b>{playlist.name}</b>
+                <span>{playlist.trackCount} 首</span>
+              </div>
+              <button
+                type="button"
+                className="playlist-delete"
+                title="删除歌单"
+                aria-label="删除歌单"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void handleDelete(playlist.id, playlist.name)
+                }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          )
+        })
+      )}
 
       <div className="theme-control">
         <span className="nav-label">外观</span>

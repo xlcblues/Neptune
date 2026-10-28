@@ -5,9 +5,11 @@ import { HomeView } from './components/HomeView'
 import { LibraryView } from './components/LibraryView'
 import { ClassifyView } from './components/ClassifyView'
 import { PlaceholderView } from './components/PlaceholderView'
+import { PlaylistView } from './components/PlaylistView'
 import { PlayerBar } from './components/PlayerBar'
 import { useUiStore } from './store/ui'
 import { useLibraryStore } from './store/library'
+import { usePlaylistStore } from './store/playlist'
 import { usePlayerStore } from './store/player'
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -22,11 +24,14 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 export default function App() {
   const nav = useUiStore((s) => s.nav)
+  const activePlaylistId = useUiStore((s) => s.activePlaylistId)
   const refresh = useLibraryStore((s) => s.refresh)
+  const refreshPlaylists = usePlaylistStore((s) => s.refresh)
 
   useEffect(() => {
     void refresh()
-  }, [refresh])
+    void refreshPlaylists()
+  }, [refresh, refreshPlaylists])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -69,7 +74,9 @@ export default function App() {
       <div className="layout">
         <Sidebar />
         <main className="main">
-          {nav === 'home' ? (
+          {nav === 'playlist' && activePlaylistId !== null ? (
+            <PlaylistView />
+          ) : nav === 'home' ? (
             <HomeView />
           ) : nav === 'library' ? (
             <LibraryView />

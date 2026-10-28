@@ -13,6 +13,7 @@ export interface Track {
   sizeBytes: number
   addedAt: string
   updatedAt: string
+  year: number | null
 }
 
 export interface LibraryStats {
@@ -65,4 +66,29 @@ export interface ClassifyProgress {
   found: number
   status: string
   message: string
+}
+
+export interface Playlist {
+  id: number
+  name: string
+  description: string | null
+  coverPath: string | null
+  createdAt: string
+  updatedAt: string
+  isSmart: boolean
+  trackCount: number
+  totalDurationMs: number
+}
+
+export interface PlaylistDetail {
+  playlist: Playlist
+  tracks: Track[]
+}
+
+export interface SmartPlaylistCriteria {
+  genre: string
+  yearStart: number | null
+  yearEnd: number | null
+  minDurationMs: number | null
+  maxDurationMs: number | null
 }
