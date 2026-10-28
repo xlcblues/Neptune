@@ -324,11 +324,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-.playlist-empty {
+.playlist-view .playlist-empty {
   min-height: 280px;
 }
 
-.playlist-empty .primary-btn {
+.playlist-view .playlist-empty .primary-btn {
   margin: 12px 0 0;
 }
 /* Shared modal surface */
