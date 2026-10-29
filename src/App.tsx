@@ -7,6 +7,7 @@ import { ClassifyView } from './components/ClassifyView'
 import { PlaceholderView } from './components/PlaceholderView'
 import { PlaylistView } from './components/PlaylistView'
 import { PlayerBar } from './components/PlayerBar'
+import { VisualView } from './components/VisualView'
 import { useUiStore } from './store/ui'
 import { useLibraryStore } from './store/library'
 import { usePlaylistStore } from './store/playlist'
@@ -82,6 +83,8 @@ export default function App() {
             <LibraryView />
           ) : nav === 'classify' ? (
             <ClassifyView />
+          ) : nav === 'visual' ? (
+            <VisualView />
           ) : (
             <PlaceholderView nav={nav} />
           )}

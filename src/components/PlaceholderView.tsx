@@ -1,9 +1,9 @@
-import { AudioWaveform, LibraryBig, ListMusic, Sparkles } from 'lucide-react'
+import { LibraryBig, ListMusic, Sparkles } from 'lucide-react'
 import type { NavKey } from '../store/ui'
 import { GlassCard } from './ui/GlassCard'
 import { Tag } from './ui/Tag'
 
-const content: Record<Exclude<NavKey, 'home'>, { title: string; milestone: string; desc: string; icon: typeof Sparkles }> = {
+const content: Record<Exclude<NavKey, 'home' | 'visual'>, { title: string; milestone: string; desc: string; icon: typeof Sparkles }> = {
   library: {
     title: '音乐库',
     milestone: 'M1 · 本地索引',
@@ -22,15 +22,9 @@ const content: Record<Exclude<NavKey, 'home'>, { title: string; milestone: strin
     desc: '创建普通与智能歌单，添加、拖拽排序、导出 M3U，并随时编辑曲目与封面。',
     icon: ListMusic,
   },
-  visual: {
-    title: '播放特效',
-    milestone: 'M5 · 可视化',
-    desc: '频谱极光、波形镜面、黑胶唱片等特效将随播放内核（M2）一起逐步接入。',
-    icon: AudioWaveform,
-  },
 }
 
-export function PlaceholderView({ nav }: { nav: Exclude<NavKey, 'home'> }) {
+export function PlaceholderView({ nav }: { nav: Exclude<NavKey, 'home' | 'visual'> }) {
   const item = content[nav]
   const Icon = item.icon
 
