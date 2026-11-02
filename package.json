@@ -1,17 +1,19 @@
 {
   "name": "neptune",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "update:manifest": "node scripts/make-update-manifest.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.2.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "@tanstack/react-virtual": "^3.13.0",
     "lucide-react": "^0.525.0",
     "react": "^18.3.1",
