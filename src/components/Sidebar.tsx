@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { AudioWaveform, HardDrive, Home, LibraryBig, Monitor, Moon, Plus, Sparkles, Sun, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AudioWaveform, Check, HardDrive, Home, LibraryBig, Monitor, Moon, Plus, Sparkles, Sun, Trash2, X } from 'lucide-react'
 import { useUiStore } from '../store/ui'
 import { useLibraryStore } from '../store/library'
 import { usePlaylistStore } from '../store/playlist'
@@ -37,6 +37,9 @@ export function Sidebar() {
   const removePlaylist = usePlaylistStore((s) => s.remove)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
+  const [confirmingId, setConfirmingId] = useState<number | null>(null)
+  const createBoxRef = useRef<HTMLDivElement>(null)
+  const confirmBoxRef = useRef<HTMLDivElement>(null)
   const trackCount = stats?.trackCount ?? 0
   const folderCount = stats?.folderCount ?? 0
 
@@ -49,14 +52,38 @@ export function Sidebar() {
     setCreating(false)
   }
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`删除歌单“${name}”？`)) return
+  const handleDelete = async (id: number) => {
     await removePlaylist(id)
+    setConfirmingId(null)
     if (activePlaylistId === id) {
       clearActivePlaylist()
       setNav('home')
     }
   }
+
+  useEffect(() => {
+    if (!creating && confirmingId === null) return
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (creating && createBoxRef.current?.contains(target)) return
+      if (confirmingId !== null && confirmBoxRef.current?.contains(target)) return
+      setCreating(false)
+      setConfirmingId(null)
+    }
+    window.addEventListener('pointerdown', onPointerDown)
+    return () => window.removeEventListener('pointerdown', onPointerDown)
+  }, [creating, confirmingId])
+
+  useEffect(() => {
+    if (!creating && confirmingId === null) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setCreating(false)
+      setConfirmingId(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [creating, confirmingId])
 
   const progressPercent =
     scanning && scanProgress && scanProgress.total > 0
@@ -106,18 +133,31 @@ export function Sidebar() {
       </div>
 
       {creating ? (
-        <div className="playlist-create">
+        <div className="playlist-create" ref={createBoxRef}>
           <input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') void handleCreate()
-              if (event.key === 'Escape') setCreating(false)
+              if (event.key === 'Enter' && event.nativeEvent.isComposing === false) {
+                void handleCreate()
+              }
             }}
             placeholder="歌单名称"
             autoFocus
           />
-          <button onClick={() => void handleCreate()}>创建</button>
+          <button className="pl-create-btn" onClick={() => void handleCreate()}>
+            <Check size={13} />
+            创建
+          </button>
+          <button
+            type="button"
+            className="pl-create-cancel"
+            title="取消新建"
+            aria-label="取消新建"
+            onClick={() => setCreating(false)}
+          >
+            <X size={13} />
+          </button>
         </div>
       ) : null}
 
@@ -127,6 +167,35 @@ export function Sidebar() {
         playlists.map((playlist) => {
           const url = coverUrl(playlist.coverPath)
           const active = nav === 'playlist' && activePlaylistId === playlist.id
+          if (confirmingId === playlist.id) {
+            return (
+              <div
+                key={playlist.id}
+                className="playlist-confirm"
+                ref={confirmBoxRef}
+              >
+                <span className="pl-confirm-text">删除“{playlist.name}”？</span>
+                <div className="pl-confirm-actions">
+                  <button
+                    type="button"
+                    className="pl-confirm-cancel"
+                    onClick={() => setConfirmingId(null)}
+                  >
+                    <X size={12} />
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    className="pl-confirm-delete"
+                    onClick={() => void handleDelete(playlist.id)}
+                  >
+                    <Trash2 size={12} />
+                    删除
+                  </button>
+                </div>
+              </div>
+            )
+          }
           return (
             <div
               key={playlist.id}
@@ -153,7 +222,7 @@ export function Sidebar() {
                 aria-label="删除歌单"
                 onClick={(event) => {
                   event.stopPropagation()
-                  void handleDelete(playlist.id, playlist.name)
+                  setConfirmingId(playlist.id)
                 }}
               >
                 <Trash2 size={13} />

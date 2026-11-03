@@ -430,6 +430,87 @@ function SmartPlaylistModal({ onClose }: ModalProps) {
   )
 }
 
+function DeletePlaylistModal({
+  playlistName,
+  onClose,
+  onConfirm,
+}: {
+  playlistName: string
+  onClose: () => void
+  onConfirm: () => Promise<void>
+}) {
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [busy, onClose])
+
+  const handleConfirm = async () => {
+    if (busy) return
+    setBusy(true)
+    await onConfirm()
+    setBusy(false)
+    onClose()
+  }
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <div className="modal glass-card" role="dialog" aria-modal="true">
+        <div className="modal-head">
+          <h2>删除歌单</h2>
+          <IconButton
+            title="关闭"
+            aria-label="关闭删除确认"
+            onClick={onClose}
+            disabled={busy}
+          >
+            <X size={15} />
+          </IconButton>
+        </div>
+
+        <div className="delete-confirm-body">
+          <span className="delete-confirm-icon">
+            <Trash2 size={20} />
+          </span>
+          <div className="delete-confirm-copy">
+            <b>确定删除“{playlistName}”？</b>
+            <span>歌单会被移除，本地音乐文件不会受到影响。</span>
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={onClose}
+            disabled={busy}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            className="danger-btn"
+            onClick={() => void handleConfirm()}
+            disabled={busy}
+          >
+            {busy ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}
+            <span>删除</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AddTracksModal({
   playlistId,
   existingIds,
@@ -618,6 +699,7 @@ export function PlaylistView() {
   const [showEdit, setShowEdit] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const [showSmart, setShowSmart] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
   const [editingTrack, setEditingTrack] = useState<Track | null>(null)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dropIndex, setDropIndex] = useState<number | null>(null)
@@ -712,7 +794,6 @@ export function PlaylistView() {
 
   const handleDelete = async () => {
     if (!active) return
-    if (!window.confirm(`删除歌单“${active.playlist.name}”？`)) return
     await remove(active.playlist.id)
     clearActivePlaylist()
     setNav('home')
@@ -810,7 +891,7 @@ export function PlaylistView() {
               title="删除歌单"
               aria-label="删除歌单"
               tone="warm"
-              onClick={() => void handleDelete()}
+              onClick={() => setShowDelete(true)}
             >
               <Trash2 size={15} />
             </IconButton>
@@ -969,6 +1050,13 @@ export function PlaylistView() {
         />
       ) : null}
       {showSmart ? <SmartPlaylistModal onClose={() => setShowSmart(false)} /> : null}
+      {showDelete ? (
+        <DeletePlaylistModal
+          playlistName={playlist.name}
+          onClose={() => setShowDelete(false)}
+          onConfirm={() => handleDelete()}
+        />
+      ) : null}
       {editingTrack ? (
         <TrackEditModal
           track={editingTrack}

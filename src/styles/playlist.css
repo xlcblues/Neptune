@@ -537,6 +537,46 @@
   margin-left: 0;
 }
 
+.delete-confirm-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 2px 8px;
+}
+
+.delete-confirm-icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 1px solid var(--danger-border);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--danger-bg);
+  color: var(--warm);
+}
+
+.delete-confirm-copy {
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.delete-confirm-copy b {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text1);
+  overflow-wrap: anywhere;
+}
+
+.delete-confirm-copy span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text3);
+}
+
 .secondary-btn {
   display: inline-flex;
   align-items: center;
@@ -567,6 +607,41 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.danger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--warm);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.15s ease, filter 0.15s ease;
+}
+
+.danger-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.danger-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.danger-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.modal-footer .danger-btn {
+  margin-left: 0;
+}
+
 /* Smart playlist preview */
 .smart-preview {
   margin-top: 4px;
