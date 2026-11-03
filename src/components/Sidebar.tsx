@@ -134,30 +134,38 @@ export function Sidebar() {
 
       {creating ? (
         <div className="playlist-create" ref={createBoxRef}>
-          <input
-            value={newName}
-            onChange={(event) => setNewName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && event.nativeEvent.isComposing === false) {
-                void handleCreate()
-              }
-            }}
-            placeholder="歌单名称"
-            autoFocus
-          />
-          <button className="pl-create-btn" onClick={() => void handleCreate()}>
-            <Check size={13} />
-            创建
-          </button>
-          <button
-            type="button"
-            className="pl-create-cancel"
-            title="取消新建"
-            aria-label="取消新建"
-            onClick={() => setCreating(false)}
-          >
-            <X size={13} />
-          </button>
+          <div className="pl-create-field">
+            <Plus size={13} />
+            <input
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && event.nativeEvent.isComposing === false) {
+                  void handleCreate()
+                }
+              }}
+              placeholder="歌单名称"
+              autoFocus
+            />
+          </div>
+          <div className="pl-create-actions">
+            <button
+              type="button"
+              className="pl-create-cancel"
+              onClick={() => setCreating(false)}
+            >
+              <X size={12} />
+              取消
+            </button>
+            <button
+              type="button"
+              className="pl-create-btn"
+              onClick={() => void handleCreate()}
+            >
+              <Check size={12} />
+              创建
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -174,7 +182,12 @@ export function Sidebar() {
                 className="playlist-confirm"
                 ref={confirmBoxRef}
               >
-                <span className="pl-confirm-text">删除“{playlist.name}”？</span>
+                <div className="pl-confirm-copy">
+                  <span className="pl-confirm-icon">
+                    <Trash2 size={13} />
+                  </span>
+                  <span className="pl-confirm-text">删除“{playlist.name}”？</span>
+                </div>
                 <div className="pl-confirm-actions">
                   <button
                     type="button"

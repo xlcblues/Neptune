@@ -143,7 +143,7 @@ function EditPlaylistModal({
         if (event.target === event.currentTarget) onClose()
       }}
     >
-      <div className="modal glass-card" role="dialog" aria-modal="true">
+      <div className="modal modal-delete glass-card" role="dialog" aria-modal="true">
         <div className="modal-head">
           <h2>编辑歌单</h2>
           <IconButton title="关闭" aria-label="关闭编辑歌单" onClick={onClose}>

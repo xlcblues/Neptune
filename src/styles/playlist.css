@@ -362,6 +362,10 @@
   width: min(720px, 100%);
 }
 
+.modal-delete {
+  width: min(440px, 100%);
+}
+
 .modal-head {
   display: flex;
   align-items: center;
@@ -545,26 +549,26 @@
 }
 
 .delete-confirm-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex: none;
-  border: 1px solid var(--danger-border);
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: var(--danger-bg);
+  background: linear-gradient(135deg, var(--danger-bg), rgba(207, 74, 60, 0.04));
   color: var(--warm);
+  box-shadow: inset 0 0 0 1px var(--danger-border), 0 4px 14px rgba(207, 74, 60, 0.12);
 }
 
 .delete-confirm-copy {
   min-width: 0;
-  padding-top: 3px;
+  padding-top: 2px;
 }
 
 .delete-confirm-copy b {
   display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text1);
   overflow-wrap: anywhere;

@@ -396,29 +396,64 @@
 }
 
 .playlist-create {
+  margin: 2px 8px 10px;
+  padding: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--glass);
+  box-shadow: 0 2px 12px rgba(15, 31, 66, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  animation: sidebar-panel-in 0.18s ease;
+}
+
+.pl-create-field {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px 8px;
-}
-
-.playlist-create input {
-  flex: 1;
-  min-width: 0;
-  height: 30px;
+  gap: 8px;
+  height: 34px;
   padding: 0 10px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border);
   border-radius: 7px;
   background: var(--fill-soft);
-  color: var(--text1);
-  font-size: 12px;
-  outline: none;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  color: var(--text3);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.playlist-create input:focus {
+.pl-create-field:focus-within {
   border-color: var(--accent-border);
   background: var(--glass);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.pl-create-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text1);
+  font-size: 12px;
+}
+
+.pl-create-field input::placeholder {
+  color: var(--text3);
+}
+
+.pl-create-actions,
+.pl-confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.pl-create-actions {
+  margin-top: 8px;
 }
 
 .pl-create-btn,
@@ -426,41 +461,70 @@
 .pl-confirm-cancel,
 .pl-confirm-delete {
   height: 28px;
-  padding: 0 9px;
-  border: 1px solid var(--border);
+  padding: 0 10px;
   border-radius: 7px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: var(--fill-soft);
-  color: var(--text2);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.pl-create-cancel,
+.pl-confirm-cancel {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
 }
 
 .pl-create-cancel {
-  width: 28px;
-  padding: 0;
-  justify-content: center;
+  border-color: transparent;
+}
+
+.pl-create-btn,
+.pl-confirm-delete {
+  border: 0;
 }
 
 .pl-create-btn {
-  border: 0;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--on-accent);
 }
 
-.pl-create-btn:hover {
+.pl-confirm-delete {
+  background: var(--warm);
+  color: #ffffff;
+}
+
+.pl-create-btn:hover,
+.pl-confirm-delete:hover {
+  filter: brightness(1.08);
   box-shadow: 0 4px 12px var(--accent-shadow);
 }
 
 .pl-create-cancel:hover,
 .pl-confirm-cancel:hover {
-  background: var(--fill);
+  background: var(--fill-soft);
   color: var(--text1);
   border-color: var(--border-strong);
+}
+
+.pl-create-btn:active,
+.pl-create-cancel:active,
+.pl-confirm-cancel:active,
+.pl-confirm-delete:active {
+  transform: scale(0.96);
+}
+
+.pl-create-btn:focus-visible,
+.pl-create-cancel:focus-visible,
+.pl-confirm-cancel:focus-visible,
+.pl-confirm-delete:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .playlist-item {
@@ -493,11 +557,12 @@
   background: transparent;
   color: var(--text3);
   cursor: pointer;
-  opacity: 0.72;
+  opacity: 0;
   transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 .playlist-item:hover .playlist-delete,
+.playlist-item:focus-within .playlist-delete,
 .playlist-item .playlist-delete:focus-visible {
   opacity: 1;
 }
@@ -508,20 +573,40 @@
 }
 
 .playlist-confirm {
+  margin: 2px 8px 10px;
+  padding: 10px;
+  border: 1px solid var(--danger-border);
+  border-radius: 8px;
+  background: var(--glass);
+  box-shadow: 0 2px 12px rgba(207, 74, 60, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  animation: sidebar-panel-in 0.18s ease;
+}
+
+.pl-confirm-copy {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 2px 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--danger-border);
-  border-radius: 8px;
+  min-width: 0;
+}
+
+.pl-confirm-icon {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
   background: var(--danger-bg);
+  color: var(--warm);
 }
 
 .pl-confirm-text {
   flex: 1;
   min-width: 0;
   font-size: 12px;
+  font-weight: 500;
   color: var(--text2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -529,20 +614,7 @@
 }
 
 .pl-confirm-actions {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex: none;
-}
-
-.pl-confirm-delete {
-  border: 0;
-  background: var(--warm);
-  color: #ffffff;
-}
-
-.pl-confirm-delete:hover {
-  filter: brightness(1.08);
+  margin-top: 9px;
 }
 
 .sidebar .playlist-empty {
@@ -982,6 +1054,17 @@
 
 .icon-button.accent {
   color: var(--accent);
+}
+
+@keyframes sidebar-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (max-width: 1080px) {
