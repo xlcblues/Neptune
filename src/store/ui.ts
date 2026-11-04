@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type NavKey = 'home' | 'library' | 'classify' | 'visual' | 'playlist'
+export type NavKey = 'home' | 'library' | 'classify' | 'visual' | 'playlist' | 'playing'
 
 interface UiState {
   nav: NavKey

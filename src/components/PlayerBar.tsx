@@ -2,10 +2,14 @@ import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
   AudioWaveform,
+  ChevronUp,
   ListMusic,
   Music2,
   Pause,
   Play,
+  Repeat,
+  Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
   Volume2,
@@ -17,6 +21,15 @@ import { trackCoverStyle } from '../lib/cover'
 import { usePlayerStore } from '../store/player'
 import { useUiStore } from '../store/ui'
 import { IconButton } from './ui/IconButton'
+import type { PlayMode } from '../store/player'
+
+const modeOptions: Record<PlayMode, { label: string; icon: typeof Repeat }> = {
+  order: { label: '顺序播放', icon: Repeat },
+  single: { label: '单曲循环', icon: Repeat1 },
+  shuffle: { label: '随机播放', icon: Shuffle },
+}
+
+const modeOrder: PlayMode[] = ['order', 'single', 'shuffle']
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
@@ -47,16 +60,31 @@ export function PlayerBar() {
   const seek = usePlayerStore((s) => s.seek)
   const setVolume = usePlayerStore((s) => s.setVolume)
   const playContext = usePlayerStore((s) => s.playContext)
+  const playMode = usePlayerStore((s) => s.playMode)
+  const setPlayMode = usePlayerStore((s) => s.setPlayMode)
   const setNav = useUiStore((s) => s.setNav)
 
   const track = current
   const progress = duration > 0 ? clamp(currentTime, duration) : 0
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
   const coverImage = track?.coverPath ? coverUrl(track.coverPath) : ''
+  const modeConfig = modeOptions[playMode]
+  const ModeIcon = modeConfig.icon
+
+  const cyclePlayMode = () => {
+    const currentIndex = modeOrder.indexOf(playMode)
+    setPlayMode(modeOrder[(currentIndex + 1) % modeOrder.length])
+  }
 
   return (
     <footer className="player-bar">
-      <div className="player-now">
+      <button
+        type="button"
+        className="player-now"
+        title="打开播放页面"
+        aria-label="打开播放页面"
+        onClick={() => setNav('playing')}
+      >
         <div
           className="player-cover"
           style={track ? trackCoverStyle(track.path) : undefined}
@@ -78,7 +106,10 @@ export function PlayerBar() {
             </>
           )}
         </div>
-      </div>
+        <span className="player-open-hint" aria-hidden="true">
+          <ChevronUp size={15} />
+        </span>
+      </button>
 
       <div className="player-center">
         <div className="player-controls">
@@ -132,6 +163,15 @@ export function PlayerBar() {
       </div>
 
       <div className="player-right">
+        <IconButton
+          title={`${modeConfig.label}，点击切换播放模式`}
+          aria-label={`播放模式：${modeConfig.label}`}
+          aria-pressed={playMode !== 'order'}
+          className={`player-mode ${playMode !== 'order' ? 'active' : ''}`}
+          onClick={cyclePlayMode}
+        >
+          <ModeIcon size={16} />
+        </IconButton>
         <IconButton
           title="播放特效"
           aria-label="播放特效"

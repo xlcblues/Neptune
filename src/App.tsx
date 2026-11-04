@@ -8,6 +8,7 @@ import { PlaceholderView } from './components/PlaceholderView'
 import { PlaylistView } from './components/PlaylistView'
 import { PlayerBar } from './components/PlayerBar'
 import { VisualView } from './components/VisualView'
+import { NowPlayingView } from './components/NowPlayingView'
 import { useUiStore } from './store/ui'
 import { useLibraryStore } from './store/library'
 import { usePlaylistStore } from './store/playlist'
@@ -32,6 +33,7 @@ export default function App() {
   useEffect(() => {
     void refresh()
     void refreshPlaylists()
+    usePlayerStore.getState().restoreSession()
   }, [refresh, refreshPlaylists])
 
   useEffect(() => {
@@ -85,6 +87,8 @@ export default function App() {
             <ClassifyView />
           ) : nav === 'visual' ? (
             <VisualView />
+          ) : nav === 'playing' ? (
+            <NowPlayingView />
           ) : (
             <PlaceholderView nav={nav} />
           )}

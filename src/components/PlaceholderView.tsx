@@ -3,7 +3,10 @@ import type { NavKey } from '../store/ui'
 import { GlassCard } from './ui/GlassCard'
 import { Tag } from './ui/Tag'
 
-const content: Record<Exclude<NavKey, 'home' | 'visual'>, { title: string; milestone: string; desc: string; icon: typeof Sparkles }> = {
+const content: Record<
+  Exclude<NavKey, 'home' | 'visual' | 'playing'>,
+  { title: string; milestone: string; desc: string; icon: typeof Sparkles }
+> = {
   library: {
     title: '音乐库',
     milestone: 'M1 · 本地索引',
@@ -24,7 +27,11 @@ const content: Record<Exclude<NavKey, 'home' | 'visual'>, { title: string; miles
   },
 }
 
-export function PlaceholderView({ nav }: { nav: Exclude<NavKey, 'home' | 'visual'> }) {
+export function PlaceholderView({
+  nav,
+}: {
+  nav: Exclude<NavKey, 'home' | 'visual' | 'playing'>
+}) {
   const item = content[nav]
   const Icon = item.icon
 

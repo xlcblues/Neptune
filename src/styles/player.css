@@ -20,6 +20,57 @@
   min-width: 0;
 }
 
+button.player-now {
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.player-now:hover .player-cover {
+  transform: scale(1.02);
+  box-shadow: var(--cover-shadow), 0 6px 18px var(--accent-shadow);
+}
+
+.player-now:focus-visible {
+  outline: none;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.player-open-hint {
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--fill-soft);
+  color: var(--text3);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.player-now:hover .player-open-hint,
+.player-now:focus-visible .player-open-hint {
+  opacity: 1;
+}
+
+.player-cover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.player-mode.active {
+  background: var(--fill-soft);
+  color: var(--accent);
+}
+
 .player-cover {
   width: 56px;
   height: 56px;

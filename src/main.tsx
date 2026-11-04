@@ -10,6 +10,7 @@ import './styles/player.css'
 import './styles/classify.css'
 import './styles/playlist.css'
 import './styles/visual.css'
+import './styles/nowplaying.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

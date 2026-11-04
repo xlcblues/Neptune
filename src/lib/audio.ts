@@ -16,6 +16,7 @@ class AudioEngine {
   private analyser: AnalyserNode | null = null
   private listeners = new Set<AudioListener>()
   private currentUrl: string | null = null
+  private pendingSeek: number | null = null
   private volume = 0.8
 
   subscribe(listener: AudioListener): () => void {
@@ -35,12 +36,39 @@ class AudioEngine {
       if (context.state === 'suspended') {
         await context.resume()
       }
-      if (this.currentUrl !== url) {
+      if (this.currentUrl !== url || audio.readyState < 2) {
         this.currentUrl = url
         audio.src = url
         audio.load()
       }
       await audio.play()
+    } catch (error) {
+      this.emit({
+        type: 'error',
+        message: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
+  async load(url: string, sourcePath?: string, startAt = 0): Promise<void> {
+    try {
+      const audio = this.ensureElement()
+      if (sourcePath && isTauriRuntime()) {
+        await ensureAudioAccess(sourcePath)
+      }
+      if (this.currentUrl !== url || audio.readyState < 2) {
+        this.currentUrl = url
+        audio.src = url
+        audio.load()
+      }
+      if (startAt > 0) {
+        if (audio.readyState >= 1 && Number.isFinite(audio.duration)) {
+          audio.currentTime = Math.min(startAt, Math.max(0, audio.duration - 0.05))
+          this.pendingSeek = null
+        } else {
+          this.pendingSeek = startAt
+        }
+      }
     } catch (error) {
       this.emit({
         type: 'error',
@@ -70,11 +98,19 @@ class AudioEngine {
   }
 
   seek(time: number): void {
-    if (!this.audio || !Number.isFinite(time)) return
+    if (!Number.isFinite(time)) return
     try {
-      this.audio.currentTime = Math.max(0, time)
+      if (!this.audio || this.audio.readyState < 1 || !Number.isFinite(this.audio.duration)) {
+        this.pendingSeek = Math.max(0, time)
+        return
+      }
+      this.audio.currentTime = Math.min(
+        Math.max(0, time),
+        Math.max(0, this.audio.duration - 0.05),
+      )
+      this.pendingSeek = null
     } catch {
-      // Media not loaded yet; the store keeps the requested time.
+      this.pendingSeek = Math.max(0, time)
     }
   }
 
@@ -112,6 +148,12 @@ class AudioEngine {
     audio.addEventListener('durationchange', () => {
       if (Number.isFinite(audio.duration)) {
         this.emit({ type: 'duration', duration: audio.duration })
+      }
+    })
+    audio.addEventListener('loadedmetadata', () => {
+      if (this.pendingSeek !== null && Number.isFinite(audio.duration)) {
+        audio.currentTime = Math.min(this.pendingSeek, Math.max(0, audio.duration - 0.05))
+        this.pendingSeek = null
       }
     })
     audio.addEventListener('ended', () => this.emit({ type: 'ended' }))
