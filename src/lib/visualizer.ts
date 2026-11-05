@@ -36,6 +36,12 @@ export interface VisualRuntime {
   phase: number
 }
 
+export interface VisualFocus {
+  x: number
+  y: number
+  size: number
+}
+
 const BIN_COUNT = 64
 const PARTICLE_COUNT = 96
 
@@ -369,11 +375,12 @@ function drawVinyl(
   dt: number,
   runtime: VisualRuntime,
   cover: HTMLImageElement | null,
+  focus?: VisualFocus,
 ): void {
   const energy = averageLevel(levels, 48)
-  const discSize = Math.min(width * 0.46, height * 0.7)
-  const centerX = width * 0.5
-  const centerY = height * 0.5
+  const discSize = focus ? focus.size : Math.min(width * 0.46, height * 0.7)
+  const centerX = focus ? focus.x : width * 0.5
+  const centerY = focus ? focus.y : height * 0.5
   const coverSize = discSize * (0.52 + options.intensity * 0.1)
   const spin = options.speed * (0.35 + energy * 1.4)
   runtime.rotation += dt * spin * (options.mirror ? -1 : 1)
@@ -607,6 +614,7 @@ export function renderFrame(
   time: number,
   dt: number,
   cover: HTMLImageElement | null,
+  focus?: VisualFocus,
 ): void {
   const palette = getPalette(options.palette, options.theme)
   runtime.phase += dt * options.speed
@@ -624,7 +632,7 @@ export function renderFrame(
       drawAurora(ctx, levels, options, palette, width, height, time, runtime)
       break
     case 'vinyl':
-      drawVinyl(ctx, levels, options, palette, width, height, dt, runtime, cover)
+      drawVinyl(ctx, levels, options, palette, width, height, dt, runtime, cover, focus)
       break
     case 'particles':
       drawParticles(ctx, levels, options, palette, width, height, dt, time, runtime, options.theme)

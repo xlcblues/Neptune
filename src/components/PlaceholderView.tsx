@@ -4,7 +4,7 @@ import { GlassCard } from './ui/GlassCard'
 import { Tag } from './ui/Tag'
 
 const content: Record<
-  Exclude<NavKey, 'home' | 'visual' | 'playing'>,
+  Exclude<NavKey, 'home' | 'playing' | 'settings'>,
   { title: string; milestone: string; desc: string; icon: typeof Sparkles }
 > = {
   library: {
@@ -30,7 +30,7 @@ const content: Record<
 export function PlaceholderView({
   nav,
 }: {
-  nav: Exclude<NavKey, 'home' | 'visual' | 'playing'>
+  nav: Exclude<NavKey, 'home' | 'playing' | 'settings'>
 }) {
   const item = content[nav]
   const Icon = item.icon

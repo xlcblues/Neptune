@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AudioWaveform, Check, HardDrive, Home, LibraryBig, Monitor, Moon, Plus, Sparkles, Sun, Trash2, X } from 'lucide-react'
+import { AudioWaveform, Check, HardDrive, Home, LibraryBig, Monitor, Moon, Plus, Settings, Sparkles, Sun, Trash2, X } from 'lucide-react'
 import { useUiStore } from '../store/ui'
 import { useLibraryStore } from '../store/library'
 import { usePlaylistStore } from '../store/playlist'
@@ -19,7 +19,7 @@ const navItems: { key: NavKey; label: string; icon: typeof Home }[] = [
   { key: 'home', label: '首页', icon: Home },
   { key: 'library', label: '音乐库', icon: LibraryBig },
   { key: 'classify', label: '智能分类', icon: Sparkles },
-  { key: 'visual', label: '播放特效', icon: AudioWaveform },
+  { key: 'settings', label: '设置', icon: Settings },
 ]
 
 export function Sidebar() {

@@ -7,3 +7,5 @@ src-tauri/gen/apple
 *.log
 .DS_Store
 Thumbs.db
+.codex-verify/
+test-results/

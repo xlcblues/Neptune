@@ -1,0 +1,346 @@
+/* M5 settings */
+.settings-view {
+  overflow-y: auto;
+}
+
+.settings-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.settings-head {
+  padding: 4px 0 22px;
+}
+
+.settings-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 13px;
+  background: var(--eyebrow-bg);
+  border: 1px solid var(--eyebrow-border);
+  color: var(--eyebrow-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.settings-head h1 {
+  margin: 12px 0 6px;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.settings-head p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.settings-preview {
+  position: relative;
+  height: 220px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--bg0), var(--bg2));
+}
+
+.settings-preview-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.settings-preview-chip {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  color: var(--text1);
+  font-size: 12px;
+  font-weight: 600;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.settings-group {
+  padding: 22px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-group:last-of-type {
+  border-bottom: 0;
+}
+
+.settings-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.settings-group-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.settings-group-head span {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.settings-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.settings-preset {
+  height: 84px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--glass);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+.settings-preset:hover {
+  background: var(--glass-strong);
+  color: var(--text1);
+  border-color: var(--border-strong);
+}
+
+.settings-preset:active {
+  transform: scale(0.96);
+}
+
+.settings-preset.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+  box-shadow: 0 4px 14px var(--accent-shadow);
+}
+
+.settings-swatches {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-swatch {
+  width: 38px;
+  height: 38px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.settings-swatch:hover {
+  transform: scale(1.08);
+}
+
+.settings-swatch.active {
+  border-color: var(--text1);
+  box-shadow:
+    0 0 0 2px var(--glass-strong),
+    0 3px 10px rgba(0, 0, 0, 0.22);
+}
+
+.settings-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--glass);
+}
+
+.settings-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text1);
+}
+
+.settings-row-label svg {
+  color: var(--text3);
+}
+
+.settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--accent) var(--fill, 50%),
+    var(--scan-track) var(--fill, 50%)
+  );
+  cursor: pointer;
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--on-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+  cursor: grab;
+}
+
+.settings-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--scan-track);
+}
+
+.settings-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--on-accent);
+  cursor: grab;
+}
+
+.settings-row-value {
+  min-width: 42px;
+  font-size: 12px;
+  color: var(--text3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-toggle {
+  width: 38px;
+  height: 38px;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.settings-toggle.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 0 2px;
+}
+
+.settings-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--glass);
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.settings-reset:hover {
+  background: var(--glass-strong);
+  color: var(--text1);
+  border-color: var(--border-strong);
+}
+
+.settings-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+@media (max-width: 900px) {
+  .settings-preset-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .settings-preset-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .settings-row {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  .settings-row-label {
+    min-width: 0;
+  }
+
+  .settings-slider {
+    flex-basis: 100%;
+    order: 3;
+  }
+}

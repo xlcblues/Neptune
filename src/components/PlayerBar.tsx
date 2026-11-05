@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
-  AudioWaveform,
   ChevronUp,
   ListMusic,
   Music2,
@@ -63,6 +62,7 @@ export function PlayerBar() {
   const playMode = usePlayerStore((s) => s.playMode)
   const setPlayMode = usePlayerStore((s) => s.setPlayMode)
   const setNav = useUiStore((s) => s.setNav)
+  const nav = useUiStore((s) => s.nav)
 
   const track = current
   const progress = duration > 0 ? clamp(currentTime, duration) : 0
@@ -172,13 +172,6 @@ export function PlayerBar() {
         >
           <ModeIcon size={16} />
         </IconButton>
-        <IconButton
-          title="播放特效"
-          aria-label="播放特效"
-          onClick={() => setNav('visual')}
-        >
-          <AudioWaveform size={16} />
-        </IconButton>
         <div className="volume-wrap">
           <IconButton
             title={volume === 0 ? '取消静音' : '静音'}
@@ -199,20 +192,22 @@ export function PlayerBar() {
             style={{ '--fill': `${volume * 100}%` } as CSSProperties}
           />
         </div>
-        <div className="queue-trigger">
-          <IconButton
-            title={`播放队列（${queue.length}）`}
-            aria-label="播放队列"
-            aria-pressed={showQueue}
-            className={showQueue ? 'active' : ''}
-            onClick={() => setShowQueue((visible) => !visible)}
-          >
-            <ListMusic size={16} />
-          </IconButton>
-        </div>
+        {nav !== 'playing' ? (
+          <div className="queue-trigger">
+            <IconButton
+              title={`播放队列（${queue.length}）`}
+              aria-label="播放队列"
+              aria-pressed={showQueue}
+              className={showQueue ? 'active' : ''}
+              onClick={() => setShowQueue((visible) => !visible)}
+            >
+              <ListMusic size={16} />
+            </IconButton>
+          </div>
+        ) : null}
       </div>
 
-      {showQueue ? (
+      {showQueue && nav !== 'playing' ? (
         <div className="queue-panel glass-card">
           <div className="queue-head">
             <span>播放队列</span>
