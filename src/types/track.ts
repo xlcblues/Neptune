@@ -28,6 +28,8 @@ export interface ScanProgress {
   root: string
   total: number
   current: number
+  new: number
+  updated: number
   found: number
   status: string
   message: string

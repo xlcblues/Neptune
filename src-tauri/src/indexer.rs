@@ -21,6 +21,8 @@ pub struct ScanProgress {
     pub root: String,
     pub total: usize,
     pub current: usize,
+    pub new: usize,
+    pub updated: usize,
     pub found: usize,
     pub status: String,
     pub message: String,
@@ -31,7 +33,7 @@ pub fn scan_root(app: &AppHandle, db: &Database, root: &str) {
         return;
     };
     let started = Instant::now();
-    emit_progress(app, root, 0, 0, 0, "scanning", "正在遍历目录…".to_string());
+    emit_progress(app, root, 0, 0, 0, 0, "scanning", "正在遍历目录…".to_string());
 
     let files: Vec<PathBuf> = WalkDir::new(root)
         .follow_links(false)
@@ -46,13 +48,16 @@ pub fn scan_root(app: &AppHandle, db: &Database, root: &str) {
         .path()
         .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."));
-    let mut found = 0usize;
+    let mut new_count = 0usize;
+    let mut updated_count = 0usize;
     let mut last_emit = Instant::now();
 
     for (index, file) in files.iter().enumerate() {
         if let Some(input) = parse_track(file, &app_dir) {
-            if db.upsert_track(&input).is_ok() {
-                found += 1;
+            match db.upsert_track_with_status(&input) {
+                Ok(result) if result.inserted => new_count += 1,
+                Ok(result) if result.changed => updated_count += 1,
+                _ => {}
             }
         }
         if last_emit.elapsed() >= Duration::from_millis(80) || index + 1 == total {
@@ -61,7 +66,8 @@ pub fn scan_root(app: &AppHandle, db: &Database, root: &str) {
                 root,
                 total,
                 index + 1,
-                found,
+                new_count,
+                updated_count,
                 "scanning",
                 format!("扫描中 {}/{}", index + 1, total),
             );
@@ -69,15 +75,19 @@ pub fn scan_root(app: &AppHandle, db: &Database, root: &str) {
         }
     }
 
-    db.finish_scan_job(job_id, "done", total as i64, found as i64).ok();
+    db.finish_scan_job(job_id, "done", total as i64, new_count as i64).ok();
     emit_progress(
         app,
         root,
         total,
         total,
-        found,
+        new_count,
+        updated_count,
         "done",
-        format!("完成：{found} 首，耗时 {:.1}s", started.elapsed().as_secs_f64()),
+        format!(
+            "完成：新增 {new_count} 首，更新 {updated_count} 首，耗时 {:.1}s",
+            started.elapsed().as_secs_f64()
+        ),
     );
 }
 
@@ -253,7 +263,8 @@ fn emit_progress(
     root: &str,
     total: usize,
     current: usize,
-    found: usize,
+    new: usize,
+    updated: usize,
     status: &str,
     message: String,
 ) {
@@ -263,7 +274,9 @@ fn emit_progress(
             root: root.to_string(),
             total,
             current,
-            found,
+            new,
+            updated,
+            found: new,
             status: status.to_string(),
             message,
         },

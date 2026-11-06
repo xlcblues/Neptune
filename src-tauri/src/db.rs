@@ -45,6 +45,14 @@ pub struct TrackInput {
     pub year: Option<i64>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct TrackUpsert {
+    #[allow(dead_code)]
+    pub id: i64,
+    pub inserted: bool,
+    pub changed: bool,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryStats {
@@ -230,8 +238,132 @@ impl Database {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn upsert_track(&self, input: &TrackInput) -> Result<i64, rusqlite::Error> {
+        Ok(self.upsert_track_with_status(input)?.id)
+    }
+
+    pub fn upsert_track_with_status(
+        &self,
+        input: &TrackInput,
+    ) -> Result<TrackUpsert, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
+        let existing = conn
+            .query_row(
+                "
+                SELECT id, title, artist, album, genre, year, duration_ms, bitrate,
+                       sample_rate, channels, cover_path, size_bytes
+                FROM tracks WHERE path = ?1;
+                ",
+                params![input.path],
+                |row| {
+                    Ok((
+                        row.get::<_, i64>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, Option<i64>>(5)?,
+                        row.get::<_, i64>(6)?,
+                        row.get::<_, Option<i64>>(7)?,
+                        row.get::<_, Option<i64>>(8)?,
+                        row.get::<_, Option<i64>>(9)?,
+                        row.get::<_, Option<String>>(10)?,
+                        row.get::<_, i64>(11)?,
+                    ))
+                },
+            )
+            .optional()?;
+
+        if let Some((
+            id,
+            old_title,
+            old_artist,
+            old_album,
+            old_genre,
+            old_year,
+            old_duration_ms,
+            old_bitrate,
+            old_sample_rate,
+            old_channels,
+            old_cover_path,
+            old_size_bytes,
+        )) = existing
+        {
+            let unchanged = old_title == input.title
+                && old_artist == input.artist
+                && old_album == input.album
+                && old_genre == input.genre
+                && old_year == input.year
+                && old_duration_ms == input.duration_ms
+                && old_bitrate == input.bitrate
+                && old_sample_rate == input.sample_rate
+                && old_channels == input.channels
+                && old_cover_path.as_deref() == input.cover_path.as_deref()
+                && old_size_bytes == input.size_bytes;
+            if unchanged {
+                return Ok(TrackUpsert {
+                    id,
+                    inserted: false,
+                    changed: false,
+                });
+            }
+
+            let has_non_metadata_genre = conn.query_row(
+                "
+                SELECT EXISTS(
+                  SELECT 1 FROM track_genres
+                  WHERE track_id = ?1 AND source IN ('manual', 'local', 'network')
+                );
+                ",
+                params![id],
+                |row| row.get::<_, bool>(0),
+            )?;
+            let genre = if has_non_metadata_genre {
+                old_genre
+            } else {
+                input.genre.clone()
+            };
+            conn.execute(
+                "
+                UPDATE tracks
+                SET title = ?1, artist = ?2, album = ?3, genre = ?4, year = ?5,
+                    duration_ms = ?6, bitrate = ?7, sample_rate = ?8,
+                    channels = ?9, cover_path = ?10, size_bytes = ?11,
+                    updated_at = datetime('now')
+                WHERE id = ?12;
+                ",
+                params![
+                    input.title,
+                    input.artist,
+                    input.album,
+                    genre,
+                    input.year,
+                    input.duration_ms,
+                    input.bitrate,
+                    input.sample_rate,
+                    input.channels,
+                    input.cover_path,
+                    input.size_bytes,
+                    id,
+                ],
+            )?;
+            if !genre.trim().is_empty() {
+                conn.execute(
+                    "
+                    INSERT OR IGNORE INTO track_genres (track_id, genre, confidence, source)
+                    VALUES (?1, ?2, 0.95, 'metadata');
+                    ",
+                    params![id, genre.trim()],
+                )?;
+            }
+            return Ok(TrackUpsert {
+                id,
+                inserted: false,
+                changed: true,
+            });
+        }
+
         let id = conn.query_row(
             "
             INSERT INTO tracks (
@@ -239,19 +371,6 @@ impl Database {
               sample_rate, channels, cover_path, size_bytes, year, updated_at
             )
             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, datetime('now'))
-            ON CONFLICT(path) DO UPDATE SET
-              title=excluded.title,
-              artist=excluded.artist,
-              album=excluded.album,
-              genre=excluded.genre,
-              duration_ms=excluded.duration_ms,
-              bitrate=excluded.bitrate,
-              sample_rate=excluded.sample_rate,
-              channels=excluded.channels,
-              cover_path=excluded.cover_path,
-              size_bytes=excluded.size_bytes,
-              year=excluded.year,
-              updated_at=datetime('now')
             RETURNING id;
             ",
             params![
@@ -279,7 +398,11 @@ impl Database {
                 params![id, input.genre.trim()],
             )?;
         }
-        Ok(id)
+        Ok(TrackUpsert {
+            id,
+            inserted: true,
+            changed: true,
+        })
     }
 
     pub fn list_tracks(
@@ -991,7 +1114,7 @@ impl Database {
             conn.execute(
                 "
                 INSERT OR IGNORE INTO track_genres (track_id, genre, confidence, source)
-                VALUES (?1, ?2, 0.95, 'metadata');
+                VALUES (?1, ?2, 0.95, 'manual');
                 ",
                 params![id, genre.trim()],
             )?;
@@ -1186,6 +1309,93 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].title, "夜航重制");
         assert_eq!(rows[0].duration_ms, 225000);
+    }
+
+    #[test]
+    fn upsert_skips_when_metadata_unchanged() {
+        let db = temp_db();
+        let track = input(
+            "D:\\music\\same.mp3",
+            "同名",
+            "艺人",
+            "专辑",
+            "流行",
+            200000,
+        );
+        let first = db.upsert_track_with_status(&track).unwrap();
+        assert!(first.inserted);
+        assert!(first.changed);
+        let second = db.upsert_track_with_status(&track).unwrap();
+        assert!(!second.inserted);
+        assert!(!second.changed);
+        assert_eq!(first.id, second.id);
+
+        let rows = db.list_tracks(None, Some("title:asc"), 0, 50).unwrap();
+        assert_eq!(rows.len(), 1);
+    }
+
+    #[test]
+    fn rescan_keeps_manual_genre() {
+        let db = temp_db();
+        let id = db
+            .upsert_track(&input(
+                "D:\\music\\manual.mp3",
+                "夜航",
+                "Echo Parade",
+                "City Lights",
+                "摇滚",
+                221000,
+            ))
+            .unwrap();
+        db.apply_genre(id, "爵士", "manual").unwrap();
+
+        let result = db
+            .upsert_track_with_status(&input(
+                "D:\\music\\manual.mp3",
+                "夜航",
+                "Echo Parade",
+                "City Lights",
+                "流行",
+                221000,
+            ))
+            .unwrap();
+        assert!(!result.inserted);
+        assert!(result.changed);
+
+        let track = db.get_track(id).unwrap().expect("track should exist");
+        assert_eq!(track.genre, "爵士");
+    }
+
+    #[test]
+    fn edit_modal_genre_survives_rescan() {
+        let db = temp_db();
+        let id = db
+            .upsert_track(&input(
+                "D:\\music\\edited.mp3",
+                "夜航",
+                "Echo Parade",
+                "City Lights",
+                "摇滚",
+                221000,
+            ))
+            .unwrap();
+        db.update_track_metadata(id, "夜航", "Echo Parade", "City Lights", "爵士")
+            .unwrap();
+
+        let result = db
+            .upsert_track_with_status(&input(
+                "D:\\music\\edited.mp3",
+                "夜航",
+                "Echo Parade",
+                "City Lights",
+                "流行",
+                221000,
+            ))
+            .unwrap();
+        assert!(result.changed);
+
+        let track = db.get_track(id).unwrap().expect("track should exist");
+        assert_eq!(track.genre, "爵士");
     }
 
     #[test]

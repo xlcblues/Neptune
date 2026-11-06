@@ -256,7 +256,7 @@ export function LibraryView() {
             <div className="scan-bar">
               <i style={{ width: `${scanPercent}%` }} />
             </div>
-            <span className="scan-count">{scanProgress.found} 首已入库</span>
+            <span className="scan-count">{scanProgress.new} 首新增 · {scanProgress.updated} 首更新</span>
           </div>
         ) : null}
 

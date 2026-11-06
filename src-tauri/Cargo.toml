@@ -1,6 +1,6 @@
 [package]
 name = "neptune"
-version = "0.5.0"
+version = "0.5.1"
 description = "Neptune local music player"
 authors = ["Neptune"]
 edition = "2021"
