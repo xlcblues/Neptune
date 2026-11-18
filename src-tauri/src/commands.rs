@@ -33,12 +33,16 @@ pub fn list_tracks(
     db: State<'_, Database>,
     query: Option<String>,
     sort: Option<String>,
+    artist: Option<String>,
+    album: Option<String>,
     page: Option<u32>,
     limit: Option<u32>,
-) -> Result<Vec<crate::db::Track>, String> {
+) -> Result<crate::db::TrackPage, String> {
     db.list_tracks(
         query.as_deref(),
         sort.as_deref(),
+        artist.as_deref(),
+        album.as_deref(),
         page.unwrap_or(0),
         limit.unwrap_or(200),
     )

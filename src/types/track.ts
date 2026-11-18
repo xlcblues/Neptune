@@ -16,6 +16,11 @@ export interface Track {
   year: number | null
 }
 
+export interface TrackPage {
+  tracks: Track[]
+  total: number
+}
+
 export interface LibraryStats {
   trackCount: number
   folderCount: number

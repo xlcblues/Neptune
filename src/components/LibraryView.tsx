@@ -148,9 +148,15 @@ export function LibraryView() {
   const scanning = useLibraryStore((s) => s.scanning)
   const scanProgress = useLibraryStore((s) => s.scanProgress)
   const error = useLibraryStore((s) => s.error)
+  const total = useLibraryStore((s) => s.total)
+  const artistFilter = useLibraryStore((s) => s.artistFilter)
+  const albumFilter = useLibraryStore((s) => s.albumFilter)
   const setQuery = useLibraryStore((s) => s.setQuery)
   const setSortKey = useLibraryStore((s) => s.setSortKey)
   const toggleSortDir = useLibraryStore((s) => s.toggleSortDir)
+  const setArtistFilter = useLibraryStore((s) => s.setArtistFilter)
+  const setAlbumFilter = useLibraryStore((s) => s.setAlbumFilter)
+  const clearFilters = useLibraryStore((s) => s.clearFilters)
   const refresh = useLibraryStore((s) => s.refresh)
   const loadMore = useLibraryStore((s) => s.loadMore)
   const addFolders = useLibraryStore((s) => s.addFolders)
@@ -279,8 +285,16 @@ export function LibraryView() {
               </button>
             ) : null}
           </div>
+          {artistFilter || albumFilter ? (
+            <div className="filter-chip">
+              <span>{artistFilter ? `艺人 · ${artistFilter}` : `专辑 · ${albumFilter}`}</span>
+              <button onClick={clearFilters} aria-label="清除筛选">
+                <X size={12} />
+              </button>
+            </div>
+          ) : null}
           <div className="toolbar-right">
-            <span className="toolbar-count">{tracks.length} 首</span>
+            <span className="toolbar-count">{total} 首</span>
             <div className="sort-control">
               <label htmlFor="sort-select">排序</label>
               <select
@@ -315,13 +329,13 @@ export function LibraryView() {
                   <span className="empty-icon">
                     <Music2 size={26} />
                   </span>
-                  <h2>{query ? '没有匹配的曲目' : '本地音乐库为空'}</h2>
+                  <h2>{query || artistFilter || albumFilter ? '没有匹配的曲目' : '本地音乐库为空'}</h2>
                   <p>
-                    {query
-                      ? '换个关键词试试，或清空搜索查看全部曲目。'
+                    {query || artistFilter || albumFilter
+                      ? '换个关键词试试，或清除筛选查看全部曲目。'
                       : '添加一个音乐目录，Neptune 会自动扫描、解析元数据并建立索引。'}
                   </p>
-                  {!query ? (
+                  {!(query || artistFilter || albumFilter) ? (
                     <button className="primary-btn" onClick={() => void handleAddFolders()}>
                       <FolderPlus size={16} />
                       <span>添加音乐目录</span>
@@ -380,9 +394,39 @@ export function LibraryView() {
                           </div>
                           <div className="track-main">
                             <b>{track.title}</b>
-                            <span>{track.artist || '未知艺人'}</span>
+                            {track.artist ? (
+                              <button
+                                type="button"
+                                className="track-sub-btn"
+                                title={`查看 ${track.artist} 的全部歌曲`}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  setArtistFilter(track.artist)
+                                }}
+                              >
+                                {track.artist}
+                              </button>
+                            ) : (
+                              <span>未知艺人</span>
+                            )}
                           </div>
-                          <div className="track-album">{track.album || '未知专辑'}</div>
+                          <div className="track-album">
+                            {track.album ? (
+                              <button
+                                type="button"
+                                className="track-album-btn"
+                                title={`查看专辑《${track.album}》的全部歌曲`}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  setAlbumFilter(track.album)
+                                }}
+                              >
+                                {track.album}
+                              </button>
+                            ) : (
+                              <span className="album-empty">未知专辑</span>
+                            )}
+                          </div>
                           <div className="track-genre">
                             {track.genre ? (
                               <Tag color={genreColor(track.genre)}>{track.genre}</Tag>
@@ -395,7 +439,7 @@ export function LibraryView() {
                       )
                     })}
                   </div>
-                  {tracks.length >= 2000 && !loading ? (
+                  {tracks.length < total && !loading ? (
                     <button className="load-more" onClick={() => void loadMore()}>
                       加载更多
                     </button>

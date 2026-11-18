@@ -177,6 +177,7 @@
   width: 22px;
   height: 22px;
   border: 0;
+  padding: 0;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -188,6 +189,45 @@
 .search-clear:hover {
   background: var(--fill-strong);
   color: var(--text1);
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  height: 30px;
+  padding: 0 7px 0 10px;
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  background: var(--fill-soft);
+  color: var(--text1);
+  font-size: 12px;
+}
+
+.filter-chip span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-chip button {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--fill-strong);
+  color: var(--text3);
+  cursor: pointer;
+}
+
+.filter-chip button:hover {
+  color: var(--accent);
 }
 
 .toolbar-right {
@@ -381,6 +421,24 @@
   text-overflow: ellipsis;
 }
 
+.track-main .track-sub-btn {
+  display: block;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text3);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
 .track-album {
   width: 170px;
   flex: none;
@@ -388,6 +446,35 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.track-album .track-album-btn {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: inherit;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.track-album .album-empty {
+  color: var(--text3);
+}
+
+.track-sub-btn:hover,
+.track-album-btn:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  text-underline-offset: 3px;
 }
 
 .track-genre {

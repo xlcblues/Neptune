@@ -29,6 +29,13 @@ pub struct Track {
     pub year: Option<i64>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrackPage {
+    pub tracks: Vec<Track>,
+    pub total: i64,
+}
+
 #[derive(Debug, Clone)]
 pub struct TrackInput {
     pub path: String,
@@ -405,21 +412,26 @@ impl Database {
         })
     }
 
-    pub fn list_tracks(
+        pub fn list_tracks(
         &self,
         query: Option<&str>,
         sort: Option<&str>,
+        artist: Option<&str>,
+        album: Option<&str>,
         page: u32,
         limit: u32,
-    ) -> Result<Vec<Track>, rusqlite::Error> {
+    ) -> Result<TrackPage, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
         let order = Self::sort_clause(sort.unwrap_or("title"));
         let offset = page.saturating_mul(limit);
         let q = query.map(str::trim).filter(|s| !s.is_empty());
+        let artist = artist.map(str::trim).filter(|s| !s.is_empty());
+        let album = album.map(str::trim).filter(|s| !s.is_empty());
 
-        let tracks = match q {
+        let (tracks, total) = match q {
             Some(raw) if raw.chars().count() >= 3 => {
                 let phrase = format!("\"{}\"", raw.replace('"', "\"\""));
+
                 let mut stmt = conn.prepare(&format!(
                     "
                     SELECT id, path, title, artist, album, genre, duration_ms,
@@ -427,12 +439,30 @@ impl Database {
                            size_bytes, added_at, updated_at, year
                     FROM tracks
                     WHERE id IN (SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1)
+                      AND (?2 IS NULL OR trim(artist) = ?2 COLLATE NOCASE)
+                      AND (?3 IS NULL OR trim(album) = ?3 COLLATE NOCASE)
                     {order}
-                    LIMIT ?2 OFFSET ?3;
+                    LIMIT ?4 OFFSET ?5;
                     "
                 ))?;
-                let rows = stmt.query_map(params![phrase, limit, offset], Self::track_from_row)?;
-                rows.collect::<Result<Vec<_>, _>>()?
+                let rows = stmt.query_map(
+                    params![phrase, artist, album, limit, offset],
+                    Self::track_from_row,
+                )?;
+                let tracks = rows.collect::<Result<Vec<_>, _>>()?;
+
+                let total = conn.query_row(
+                    "
+                    SELECT COUNT(*)
+                    FROM tracks
+                    WHERE id IN (SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1)
+                      AND (?2 IS NULL OR trim(artist) = ?2 COLLATE NOCASE)
+                      AND (?3 IS NULL OR trim(album) = ?3 COLLATE NOCASE);
+                    ",
+                    params![phrase, artist, album],
+                    |row| row.get::<_, i64>(0),
+                )?;
+                (tracks, total)
             }
             Some(raw) => {
                 let escaped = raw
@@ -440,21 +470,42 @@ impl Database {
                     .replace('%', "\\%")
                     .replace('_', "\\_");
                 let pattern = format!("%{escaped}%");
+
                 let mut stmt = conn.prepare(&format!(
                     "
                     SELECT id, path, title, artist, album, genre, duration_ms,
                            bitrate, sample_rate, channels, cover_path,
                            size_bytes, added_at, updated_at, year
                     FROM tracks
-                    WHERE title LIKE ?1 ESCAPE '\\'
+                    WHERE (title LIKE ?1 ESCAPE '\\'
                        OR artist LIKE ?1 ESCAPE '\\'
-                       OR album LIKE ?1 ESCAPE '\\'
+                       OR album LIKE ?1 ESCAPE '\\')
+                      AND (?2 IS NULL OR trim(artist) = ?2 COLLATE NOCASE)
+                      AND (?3 IS NULL OR trim(album) = ?3 COLLATE NOCASE)
                     {order}
-                    LIMIT ?2 OFFSET ?3;
+                    LIMIT ?4 OFFSET ?5;
                     "
                 ))?;
-                let rows = stmt.query_map(params![pattern, limit, offset], Self::track_from_row)?;
-                rows.collect::<Result<Vec<_>, _>>()?
+                let rows = stmt.query_map(
+                    params![pattern, artist, album, limit, offset],
+                    Self::track_from_row,
+                )?;
+                let tracks = rows.collect::<Result<Vec<_>, _>>()?;
+
+                let total = conn.query_row(
+                    "
+                    SELECT COUNT(*)
+                    FROM tracks
+                    WHERE (title LIKE ?1 ESCAPE '\\'
+                       OR artist LIKE ?1 ESCAPE '\\'
+                       OR album LIKE ?1 ESCAPE '\\')
+                      AND (?2 IS NULL OR trim(artist) = ?2 COLLATE NOCASE)
+                      AND (?3 IS NULL OR trim(album) = ?3 COLLATE NOCASE);
+                    ",
+                    params![pattern, artist, album],
+                    |row| row.get::<_, i64>(0),
+                )?;
+                (tracks, total)
             }
             None => {
                 let mut stmt = conn.prepare(&format!(
@@ -463,15 +514,29 @@ impl Database {
                            bitrate, sample_rate, channels, cover_path,
                            size_bytes, added_at, updated_at, year
                     FROM tracks
+                    WHERE (?1 IS NULL OR trim(artist) = ?1 COLLATE NOCASE)
+                      AND (?2 IS NULL OR trim(album) = ?2 COLLATE NOCASE)
                     {order}
-                    LIMIT ?1 OFFSET ?2;
+                    LIMIT ?3 OFFSET ?4;
                     "
                 ))?;
-                let rows = stmt.query_map(params![limit, offset], Self::track_from_row)?;
-                rows.collect::<Result<Vec<_>, _>>()?
+                let rows = stmt.query_map(params![artist, album, limit, offset], Self::track_from_row)?;
+                let tracks = rows.collect::<Result<Vec<_>, _>>()?;
+
+                let total = conn.query_row(
+                    "
+                    SELECT COUNT(*)
+                    FROM tracks
+                    WHERE (?1 IS NULL OR trim(artist) = ?1 COLLATE NOCASE)
+                      AND (?2 IS NULL OR trim(album) = ?2 COLLATE NOCASE);
+                    ",
+                    params![artist, album],
+                    |row| row.get::<_, i64>(0),
+                )?;
+                (tracks, total)
             }
         };
-        Ok(tracks)
+        Ok(TrackPage { tracks, total })
     }
 
     pub fn get_track(&self, id: i64) -> Result<Option<Track>, rusqlite::Error> {
@@ -1305,10 +1370,10 @@ mod tests {
             .unwrap();
         assert_eq!(first, second);
 
-        let rows = db.list_tracks(None, Some("title:asc"), 0, 50).unwrap();
-        assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].title, "夜航重制");
-        assert_eq!(rows[0].duration_ms, 225000);
+        let rows = db.list_tracks(None, Some("title:asc"), None, None, 0, 50).unwrap();
+        assert_eq!(rows.tracks.len(), 1);
+        assert_eq!(rows.tracks[0].title, "夜航重制");
+        assert_eq!(rows.tracks[0].duration_ms, 225000);
     }
 
     #[test]
@@ -1330,8 +1395,8 @@ mod tests {
         assert!(!second.changed);
         assert_eq!(first.id, second.id);
 
-        let rows = db.list_tracks(None, Some("title:asc"), 0, 50).unwrap();
-        assert_eq!(rows.len(), 1);
+        let rows = db.list_tracks(None, Some("title:asc"), None, None, 0, 50).unwrap();
+        assert_eq!(rows.tracks.len(), 1);
     }
 
     #[test]
@@ -1429,22 +1494,28 @@ mod tests {
         ))
         .unwrap();
 
-        let by_duration = db.list_tracks(None, Some("duration:desc"), 0, 50).unwrap();
-        assert_eq!(by_duration[0].title, "慢板");
+        let by_duration = db.list_tracks(None, Some("duration:desc"), None, None, 0, 50).unwrap();
+        assert_eq!(by_duration.tracks[0].title, "慢板");
 
-        let by_artist = db.list_tracks(Some("Miles"), Some("title:asc"), 0, 50).unwrap();
-        assert_eq!(by_artist.len(), 1);
-        assert_eq!(by_artist[0].title, "街角咖啡");
+        let by_artist = db.list_tracks(Some("Miles"), Some("title:asc"), None, None, 0, 50).unwrap();
+        assert_eq!(by_artist.tracks.len(), 1);
+        assert_eq!(by_artist.tracks[0].title, "街角咖啡");
 
-        let by_album_fts = db.list_tracks(Some("Sunday"), Some("title:asc"), 0, 50).unwrap();
-        assert_eq!(by_album_fts.len(), 1);
-        assert_eq!(by_album_fts[0].title, "街角咖啡");
+        let by_album_fts = db.list_tracks(Some("Sunday"), Some("title:asc"), None, None, 0, 50).unwrap();
+        assert_eq!(by_album_fts.tracks.len(), 1);
+        assert_eq!(by_album_fts.tracks[0].title, "街角咖啡");
 
-        let page_one = db.list_tracks(None, Some("title:asc"), 0, 2).unwrap();
-        let page_two = db.list_tracks(None, Some("title:asc"), 1, 2).unwrap();
-        assert_eq!(page_one.len(), 2);
-        assert_eq!(page_two.len(), 1);
-        assert!(page_one.iter().all(|row| row.id != page_two[0].id));
+        let by_exact_artist = db.list_tracks(None, Some("title:asc"), Some("Miles Quartet"), None, 0, 50).unwrap();
+        assert_eq!(by_exact_artist.tracks.len(), 1);
+        assert_eq!(by_exact_artist.total, 1);
+        let by_exact_album = db.list_tracks(None, Some("title:asc"), None, Some("Sunday Sessions"), 0, 50).unwrap();
+        assert_eq!(by_exact_album.tracks.len(), 1);
+        assert_eq!(by_exact_album.total, 1);
+        let page_one = db.list_tracks(None, Some("title:asc"), None, None, 0, 2).unwrap();
+        let page_two = db.list_tracks(None, Some("title:asc"), None, None, 1, 2).unwrap();
+        assert_eq!(page_one.tracks.len(), 2);
+        assert_eq!(page_two.tracks.len(), 1);
+        assert!(page_one.tracks.iter().all(|row| row.id != page_two.tracks[0].id));
     }
 
     #[test]

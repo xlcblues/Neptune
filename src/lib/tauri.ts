@@ -12,6 +12,7 @@ import type {
   ScanProgress,
   SmartPlaylistCriteria,
   Track,
+  TrackPage,
 } from '../types/track'
 
 export { convertFileSrc }
@@ -74,15 +75,19 @@ export async function ensureAudioAccess(path: string): Promise<void> {
 export interface ListTracksOptions {
   query?: string
   sort?: string
+  artist?: string
+  album?: string
   page?: number
   limit?: number
 }
 
-export async function listTracks(options: ListTracksOptions = {}): Promise<Track[]> {
+export async function listTracks(options: ListTracksOptions = {}): Promise<TrackPage> {
   if (!isTauriRuntime()) return filterMockTracks(options)
-  return invoke<Track[]>('list_tracks', {
+  return invoke<TrackPage>('list_tracks', {
     query: options.query?.trim() || null,
     sort: options.sort || null,
+    artist: options.artist?.trim() || null,
+    album: options.album?.trim() || null,
     page: options.page ?? 0,
     limit: options.limit ?? 2000,
   })
@@ -857,8 +862,10 @@ function mockCreateSmartPlaylist(
   return { playlist: { ...playlist }, tracks }
 }
 
-function filterMockTracks(options: ListTracksOptions): Track[] {
+function filterMockTracks(options: ListTracksOptions): TrackPage {
   const query = options.query?.trim().toLowerCase() || ''
+  const artist = options.artist?.trim().toLowerCase() || ''
+  const album = options.album?.trim().toLowerCase() || ''
   let result = mockTracks
   if (query) {
     result = result.filter((track) =>
@@ -867,6 +874,8 @@ function filterMockTracks(options: ListTracksOptions): Track[] {
       ),
     )
   }
+  if (artist) result = result.filter((track) => track.artist.toLowerCase() === artist)
+  if (album) result = result.filter((track) => track.album.toLowerCase() === album)
   const [rawKey, rawDir] = (options.sort || 'title:asc').split(':')
   const dir = rawDir === 'desc' ? -1 : 1
   const keyMap: Record<string, keyof Track> = {
@@ -884,7 +893,10 @@ function filterMockTracks(options: ListTracksOptions): Track[] {
   })
   const page = options.page ?? 0
   const limit = options.limit ?? 2000
-  return result.slice(page * limit, (page + 1) * limit)
+  return {
+    tracks: result.slice(page * limit, (page + 1) * limit),
+    total: result.length,
+  }
 }
 
 export async function exportPlaylistM3U(
